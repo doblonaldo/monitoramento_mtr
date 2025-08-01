@@ -69,7 +69,6 @@
         .modal-actions button[type="submit"] { background-color: var(--cor-primaria); color: white; }
         .modal-actions button[type="button"] { background-color: #4a4c6a; color: var(--cor-texto); }
         
-        /* Estilo para Notificações (Toast) */
         .toast {
             position: fixed; bottom: 20px; left: 50%;
             transform: translateX(-50%);
@@ -114,7 +113,6 @@
             const charts = {};
             const API_URL = 'http://localhost:3000/api';
 
-            // --- Funções de UI ---
             function showToast(message, type = 'success') {
                 const container = document.getElementById('toast-container');
                 const toast = document.createElement('div');
@@ -129,7 +127,6 @@
                 }, 3000);
             }
 
-            // --- Funções de Renderização ---
             function renderHostCard(host) {
                 const cardId = `card-${host.replace(/\./g, '-')}`;
                 if (document.getElementById(cardId)) return;
@@ -188,7 +185,6 @@
                 });
             }
 
-            // --- Funções de API ---
             async function fetchHostData(host) {
                 try {
                     const response = await fetch(`${API_URL}/hosts/${host}`);
@@ -217,7 +213,6 @@
                 }
             }
 
-            // --- Lógica de Eventos ---
             const addHostBtn = document.getElementById('add-host-btn');
             const addHostModal = document.getElementById('add-host-modal');
             const addHostForm = document.getElementById('add-host-form');
@@ -232,32 +227,38 @@
             addHostForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
                 const newHost = newHostInput.value.trim();
+                const submitButton = addHostForm.querySelector('button[type="submit"]');
+
                 if (newHost) {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Adicionando...';
+                    
                     try {
                         const response = await fetch(`${API_URL}/hosts`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ host: newHost })
                         });
+                        
                         if (!response.ok) {
                              const errorData = await response.json();
                              throw new Error(errorData.message || 'Falha ao adicionar host.');
                         }
                         
-                        // ** AJUSTE APLICADO AQUI **
-                        // Em vez de renderizar dinamicamente, apenas recarregamos a página.
-                        // O backend já salvou o host, então a função loadInitialHosts()
-                        // irá renderizar o novo card na recarga.
                         location.reload();
 
                     } catch (error) { 
                         showToast(error.message, 'error');
+                    } finally {
+                        closeModal();
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Adicionar';
+                        newHostInput.value = '';
                     }
                 }
             });
 
             dashboard.addEventListener('click', async (event) => {
-                // Remover Host
                 if (event.target.classList.contains('remove-host-btn')) {
                     const hostCard = event.target.closest('.host-card');
                     const hostToRemove = hostCard.dataset.host;
@@ -272,7 +273,6 @@
                         showToast(error.message, 'error');
                     }
                 }
-                // Ver Histórico na Timeline
                 if (event.target.classList.contains('timeline-marker')) {
                     const hostCard = event.target.closest('.host-card');
                     const mtrOutputPre = hostCard.querySelector('.mtr-output pre code');
@@ -280,7 +280,6 @@
                 }
             });
             
-            // Simulação de atualização de latência (gráfico)
             setInterval(() => {
                 Object.values(charts).forEach(chart => {
                     chart.data.datasets[0].data.shift();
@@ -289,7 +288,6 @@
                 });
             }, 2000);
 
-            // Inicia a aplicação
             loadInitialHosts();
         });
     </script>

@@ -50,7 +50,7 @@ function executeMtr(host) {
         if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
             return reject(new Error('Host inválido.'));
         }
-        const command = `mtr -r -n -c 10 -z -4 ${host}`;
+        const command = `mtr -r -n -c 10 -z ${host}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 return reject(new Error(`Falha ao testar o host ${host}: ${stderr}`));
