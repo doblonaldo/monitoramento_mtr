@@ -12,13 +12,10 @@ const fs = require('fs').promises;
 const app = express();
 const PORT = 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
-// --- ARQUIVOS DE LISTA DE HOSTS ---
-const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt'); // Arquivo para importação inicial
-const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt'); // Arquivo para exportação da lista
+const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
+const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
+const MONITORING_INTERVAL = 10 * 60 * 1000;
 
-const MONITORING_INTERVAL = 2 * 60 * 1000; // 10 minutos em milissegundos
-
-// Estrutura de dados em memória
 let db = { hosts: {} };
 let lastCheckTimestamp = null;
 
@@ -32,11 +29,9 @@ async function loadDatabase() {
         await fs.access(DB_FILE);
         const data = await fs.readFile(DB_FILE, 'utf-8');
         let parsedData = JSON.parse(data);
-
         if (!parsedData.hosts || Array.isArray(parsedData.hosts)) {
             parsedData.hosts = {};
         }
-        
         db = parsedData;
         console.log('[DB] Banco de dados carregado com sucesso.');
     } catch (error) {
@@ -54,7 +49,6 @@ async function saveDatabase() {
     }
 }
 
-// --- FUNÇÃO PARA SALVAR A LISTA DE HOSTS EM .TXT ---
 async function saveHostList() {
     try {
         const hosts = Object.keys(db.hosts);
@@ -65,23 +59,20 @@ async function saveHostList() {
     }
 }
 
-// --- FUNÇÃO PARA IMPORTAR HOSTS DE .TXT NA INICIALIZAÇÃO ---
 async function importHostsFromFile() {
     try {
         await fs.access(HOST_LIST_FILE);
         const data = await fs.readFile(HOST_LIST_FILE, 'utf-8');
         const hostsFromFile = data.split('\n').map(h => h.trim()).filter(h => h);
-
         let newHostsAdded = false;
         for (const host of hostsFromFile) {
             if (!db.hosts[host]) {
                 console.log(`[Import] Host "${host}" do arquivo não está no DB. Adicionando...`);
                 db.hosts[host] = { lastMtr: null, history: [] };
-                checkHost(host); // Inicia uma verificação imediata
+                checkHost(host);
                 newHostsAdded = true;
             }
         }
-
         if (newHostsAdded) {
             await saveDatabase();
             await saveHostList();
@@ -94,7 +85,6 @@ async function importHostsFromFile() {
         }
     }
 }
-
 
 // --- Lógica de Monitoramento ---
 function executeMtr(host) {
@@ -126,7 +116,6 @@ async function checkHost(host) {
         console.log(`[Monitor] Verificando host: ${host}`);
         const newMtrResult = await executeMtr(host);
         const hostData = db.hosts[host];
-
         if (!hostData.lastMtr) {
             console.log(`[Monitor] Primeiro resultado para ${host}. Salvando como base.`);
             hostData.lastMtr = newMtrResult;
@@ -160,11 +149,9 @@ function startMonitoring() {
             lastCheckTimestamp = new Date().toISOString();
             return;
         }
-        
         for (const host of hostsToMonitor) {
             await checkHost(host);
         }
-        
         await saveDatabase();
         lastCheckTimestamp = new Date().toISOString();
         console.log('[Monitor] Ciclo de verificação concluído.');
@@ -199,14 +186,11 @@ app.post('/api/hosts', async (req, res) => {
     if (db.hosts[host]) {
         return res.status(409).json({ message: 'Este host já está sendo monitorado.' });
     }
-
     db.hosts[host] = { lastMtr: null, history: [] };
-    
     console.log(`[API] Host adicionado: ${host}. Verificação inicial em andamento...`);
     await checkHost(host);
     await saveDatabase();
-    await saveHostList(); // Atualiza a lista de hosts
-    
+    await saveHostList();
     res.status(201).json({ message: `Host ${host} adicionado com sucesso.` });
 });
 
@@ -215,22 +199,26 @@ app.delete('/api/hosts/:host', async (req, res) => {
     if (!db.hosts[hostToRemove]) {
         return res.status(404).json({ message: 'Host não encontrado.' });
     }
-
     delete db.hosts[hostToRemove];
     await saveDatabase();
-    await saveHostList(); // Atualiza a lista de hosts
-    
+    await saveHostList();
     console.log(`[API] Host removido: ${hostToRemove}`);
     res.status(200).json({ message: `Host ${hostToRemove} removido com sucesso.` });
 });
 
 // --- Inicialização do Servidor ---
-(async () => {
-    await loadDatabase();
-    await importHostsFromFile(); // Roda a importação após carregar o DB
-    startMonitoring();
-    app.listen(PORT, () => {
-        console.log(`Servidor rodando na porta ${PORT}`);
-        console.log(`Acesse o painel em: http://localhost:${PORT}`);
-    });
-})();
+// ** CORREÇÃO APLICADA AQUI **
+// O servidor começa a "ouvir" na porta imediatamente.
+// As tarefas de longa duração (carregar DB, importar, iniciar monitoramento)
+// rodam em paralelo, sem impedir que o servidor responda a requisições.
+app.listen(PORT, () => {
+    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log(`Acesse o painel em: http://localhost:${PORT}`);
+    
+    // Inicializa o resto da aplicação
+    (async () => {
+        await loadDatabase();
+        await importHostsFromFile();
+        startMonitoring();
+    })();
+});

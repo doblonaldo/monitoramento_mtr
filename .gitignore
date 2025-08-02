@@ -10,3 +10,5 @@ node_modules/
 
 # Ignorar o nosso "banco de dados" local
 db.json
+hosts.txt
+monitored_hosts.txt

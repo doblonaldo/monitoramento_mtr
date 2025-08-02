@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Monitoramento de Rota</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Adicionando a biblioteca do calendário (flatpickr) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         :root {
@@ -19,7 +18,32 @@
             background-color: var(--cor-fundo); margin: 0; padding: 20px; color: var(--cor-texto);
             padding-bottom: 50px;
         }
-        h1 { text-align: center; margin-bottom: 15px; color: var(--cor-texto-cabecalho); font-weight: 300; }
+        .main-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 15px;
+        }
+        h1 { text-align: center; color: var(--cor-texto-cabecalho); font-weight: 300; margin: 0; }
+        
+        #refresh-btn {
+            background: none;
+            border: none;
+            color: var(--cor-texto);
+            cursor: pointer;
+            font-size: 1.5em;
+            position: absolute;
+            right: 20px;
+            transition: transform 0.3s ease, color 0.2s;
+        }
+        #refresh-btn:hover { color: var(--cor-primaria); }
+        #refresh-btn.loading { animation: spin 1s linear infinite; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         
         .controls { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 30px; gap: 10px; }
         .control-btn {
@@ -77,10 +101,22 @@
         .timeline-labels { display: flex; justify-content: space-between; font-size: 0.7em; color: #8a8d9f; padding-top: 5px; }
 
         #add-host-btn {
-            position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-            background-color: var(--cor-primaria); color: white; border: none; border-radius: 50%;
-            font-size: 2em; cursor: pointer; box-shadow: 0 4px 12px rgba(77, 115, 255, 0.4);
-            display: flex; align-items: center; justify-content: center;
+            position: fixed;
+            bottom: 50px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--cor-primaria);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 2em;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(77, 115, 255, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
         }
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
@@ -115,8 +151,12 @@
     </style>
 </head>
 <body>
-
-    <h1>Painel de Monitoramento de Rota</h1>
+    <div class="main-header">
+        <h1>Painel de Monitoramento de Rota</h1>
+        <button id="refresh-btn" title="Atualizar dados">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
+    </div>
 
     <div class="controls">
         <button class="control-btn active" data-range="3">3h</button>
@@ -149,7 +189,6 @@
         <span id="status-text">Verificando status do servidor...</span>
     </footer>
 
-    <!-- Adicionando o script do calendário -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -157,7 +196,6 @@
             const charts = {};
             const API_URL = 'http://localhost:3000/api';
 
-            // --- Inicialização do Calendário ---
             const startDatePicker = flatpickr("#start-date", {
                 enableTime: true,
                 dateFormat: "Y-m-d H:i",
@@ -169,7 +207,6 @@
                 time_24hr: true,
             });
 
-            // --- Funções de Renderização e UI ---
             function renderHostCard(host) {
                 const cardId = `card-${host.replace(/\./g, '-')}`;
                 if (document.getElementById(cardId)) return;
@@ -232,7 +269,6 @@
             
             function createRealtimeChart(canvasId, host) { /* ...código sem alterações... */ }
 
-            // --- Funções de API ---
             async function fetchHostData(host, startDate, endDate) {
                 try {
                     const response = await fetch(`${API_URL}/hosts/${host}`);
@@ -242,12 +278,10 @@
                     const card = document.getElementById(`card-${host.replace(/\./g, '-')}`);
                     if (card) {
                         card.dataset.lastMtr = data.lastMtr;
-                        
                         const liveBtn = card.querySelector('.live-btn');
                         if (liveBtn.classList.contains('active')) {
                             card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
                         }
-                        
                         updateTimeline(card, data.history || [], startDate, endDate);
                     }
                 } catch (error) {
@@ -267,11 +301,25 @@
                 }
             }
             
-            async function updateStatusFooter() { /* ...código sem alterações... */ }
+            async function updateStatusFooter() {
+                const statusText = document.getElementById('status-text');
+                try {
+                    const response = await fetch(`${API_URL}/status`);
+                    const data = await response.json();
+                    if (data.lastCheck) {
+                        const lastCheckDate = new Date(data.lastCheck);
+                        statusText.textContent = `Última verificação do servidor: ${lastCheckDate.toLocaleString('pt-BR')}`;
+                    } else {
+                        statusText.textContent = 'Servidor online. Aguardando o primeiro ciclo de verificação.';
+                    }
+                } catch (error) {
+                    statusText.textContent = 'Não foi possível conectar ao servidor de monitoramento.';
+                }
+            }
 
-            // --- Lógica de Eventos ---
             const controlButtons = document.querySelectorAll('.control-btn');
             const filterBtn = document.getElementById('filter-btn');
+            const refreshBtn = document.getElementById('refresh-btn');
 
             function updateAllTimelines() {
                 const activeBtn = document.querySelector('.control-btn.active');
@@ -313,6 +361,13 @@
                 updateAllTimelines();
             });
 
+            refreshBtn.addEventListener('click', async () => {
+                refreshBtn.classList.add('loading');
+                await loadInitialHosts();
+                await updateStatusFooter();
+                setTimeout(() => refreshBtn.classList.remove('loading'), 500);
+            });
+
             const addHostBtn = document.getElementById('add-host-btn');
             const addHostModal = document.getElementById('add-host-modal');
             const addHostForm = document.getElementById('add-host-form');
@@ -325,6 +380,7 @@
                 event.preventDefault();
                 const newHost = document.getElementById('new-host-input').value.trim();
                 if (newHost) {
+                    closeModal(); // **CORREÇÃO APLICADA AQUI**
                     try {
                         const response = await fetch(`${API_URL}/hosts`, {
                             method: 'POST',
@@ -332,11 +388,9 @@
                             body: JSON.stringify({ host: newHost })
                         });
                         if (!response.ok) throw new Error((await response.json()).message);
-                        closeModal();
                         location.reload();
                     } catch (error) { 
                         alert(error.message);
-                        closeModal();
                     }
                 }
             });
@@ -368,7 +422,6 @@
                 }
             });
             
-            // Simulação de atualização de latência (gráfico)
             setInterval(() => {
                 Object.values(charts).forEach(chart => {
                     chart.data.datasets[0].data.shift();
@@ -377,15 +430,15 @@
                 });
             }, 2000);
             
-            // Atualiza o rodapé a cada minuto
             setInterval(updateStatusFooter, 60 * 1000);
-
-            // Atualiza os dados do MTR e timeline a cada minuto
             setInterval(updateAllTimelines, 60 * 1000);
 
-            // Inicia a aplicação
-            loadInitialHosts();
-            updateStatusFooter();
+            // **CORREÇÃO APLICADA AQUI**
+            // Adiciona um pequeno atraso antes de carregar os dados iniciais
+            setTimeout(() => {
+                loadInitialHosts();
+                updateStatusFooter();
+            }, 500); // Atraso de 500ms
         });
     </script>
 </body>
