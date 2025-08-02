@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Monitoramento de Rota</title>
-    
-    <!-- Bibliotecas Externas -->
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     
-    <!-- Arquivos Locais -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,8 +16,10 @@
     </div>
 
     <div class="controls">
-        <button class="control-btn active" data-range="3">3h</button>
-        <button class="control-btn" data-range="6">6h</button>
+        <div class="time-range-controls">
+            <button class="control-btn active" data-range="3">3h</button>
+            <button class="control-btn" data-range="6">6h</button>
+        </div>
         <div class="date-range-picker">
             <input type="text" id="start-date" placeholder="Data de Início">
             <input type="text" id="end-date" placeholder="Data de Fim">
@@ -53,7 +53,6 @@
         <span id="status-text">Verificando status do servidor...</span>
     </footer>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="script.js"></script>
 </body>
