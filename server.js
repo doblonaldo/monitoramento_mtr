@@ -55,9 +55,27 @@ function executeMtr(host) {
             if (error) {
                 return reject(new Error(`Falha ao testar o host ${host}: ${stderr}`));
             }
-            // Normaliza a saída para facilitar a comparação, removendo a primeira linha (timestamp)
-            const normalizedOutput = stdout.split('\n').slice(1).join('\n').trim();
-            resolve(normalizedOutput);
+            
+            // ** AJUSTE APLICADO AQUI **
+            // Processa a saída do MTR para manter apenas as colunas de rota.
+            const lines = stdout.trim().split('\n');
+            const headerLine = lines.find(line => line.includes('Loss%'));
+            if (!headerLine) {
+                // Se não encontrar o cabeçalho, retorna a saída como está (pode ser um erro do mtr)
+                resolve(stdout);
+                return;
+            }
+
+            const lossIndex = headerLine.indexOf('Loss%');
+            
+            const formattedLines = lines.slice(1) // Pula a linha "Start:"
+                .map(line => {
+                    // Pega a parte da string antes da coluna "Loss%" e remove espaços extras
+                    return line.substring(0, lossIndex).trimEnd();
+                });
+
+            const finalOutput = formattedLines.join('\n');
+            resolve(finalOutput);
         });
     });
 }
