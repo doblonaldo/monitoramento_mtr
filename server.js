@@ -11,6 +11,7 @@ const fs = require('fs').promises;
 
 const app = express();
 const PORT = 3000;
+const HOST = '0.0.0.0'; // <-- MUDANÇA AQUI: Ouve em todas as interfaces de rede
 const DB_FILE = path.join(__dirname, 'db.json');
 const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
@@ -68,7 +69,7 @@ async function importHostsFromFile() {
         for (const host of hostsFromFile) {
             if (!db.hosts[host]) {
                 console.log(`[Import] Host "${host}" do arquivo não está no DB. Adicionando...`);
-                db.hosts[host] = { lastMtr: null, history: [] };
+                db.hosts[host] = { lastMtr: null, history: [], status: 'ok' };
                 checkHost(host);
                 newHostsAdded = true;
             }
@@ -95,7 +96,8 @@ function executeMtr(host) {
         const command = `mtr -r -n -c 10 -z -4 ${host}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                return reject(new Error(`Falha ao testar o host ${host}: ${stderr}`));
+                resolve({ error: `Falha ao testar o host ${host}: ${stderr}` });
+                return;
             }
             const lines = stdout.trim().split('\n');
             const headerLine = lines.find(line => line.includes('Loss%'));
@@ -112,30 +114,43 @@ function executeMtr(host) {
 }
 
 async function checkHost(host) {
-    try {
-        console.log(`[Monitor] Verificando host: ${host}`);
-        const newMtrResult = await executeMtr(host);
-        const hostData = db.hosts[host];
-        if (!hostData.lastMtr) {
-            console.log(`[Monitor] Primeiro resultado para ${host}. Salvando como base.`);
-            hostData.lastMtr = newMtrResult;
-            hostData.history.push({
-                timestamp: new Date().toISOString(),
-                mtrLog: newMtrResult
-            });
-        } else if (hostData.lastMtr !== newMtrResult) {
-            console.log(`[Monitor] MUDANÇA DETECTADA para ${host}!`);
-            const changeEvent = {
-                timestamp: new Date().toISOString(),
-                mtrLog: newMtrResult
-            };
-            hostData.history.push(changeEvent);
-            hostData.lastMtr = newMtrResult;
+    const newMtrResult = await executeMtr(host);
+    const hostData = db.hosts[host];
+    if (!hostData) return;
+
+    if (newMtrResult.error) {
+        console.error(`[Monitor] Erro ao verificar ${host}:`, newMtrResult.error);
+        if (hostData.status === 'failing') {
+            console.log(`[Monitor] Host ${host} falhou pela segunda vez consecutiva. Marcando para remoção.`);
+            hostData.toBeDeleted = true;
         } else {
-            console.log(`[Monitor] Nenhuma mudança para ${host}.`);
+            console.log(`[Monitor] Host ${host} falhou pela primeira vez. Marcando para observação.`);
+            hostData.status = 'failing';
+            hostData.lastMtr = `Host não encontrado ou inacessível.\nSerá removido automaticamente na próxima verificação se o erro persistir.`;
         }
-    } catch (error) {
-        console.error(error.message);
+        return;
+    }
+
+    console.log(`[Monitor] Verificação de ${host} bem-sucedida.`);
+    hostData.status = 'ok';
+
+    if (!hostData.lastMtr || hostData.lastMtr.startsWith('Host não encontrado')) {
+        console.log(`[Monitor] Primeiro resultado válido para ${host}. Salvando como base.`);
+        hostData.lastMtr = newMtrResult;
+        hostData.history.push({
+            timestamp: new Date().toISOString(),
+            mtrLog: newMtrResult
+        });
+    } else if (hostData.lastMtr !== newMtrResult) {
+        console.log(`[Monitor] MUDANÇA DETECTADA para ${host}!`);
+        const changeEvent = {
+            timestamp: new Date().toISOString(),
+            mtrLog: newMtrResult
+        };
+        hostData.history.push(changeEvent);
+        hostData.lastMtr = newMtrResult;
+    } else {
+        console.log(`[Monitor] Nenhuma mudança para ${host}.`);
     }
 }
 
@@ -145,14 +160,28 @@ function startMonitoring() {
         console.log('[Monitor] Executando ciclo de verificação...');
         const hostsToMonitor = Object.keys(db.hosts);
         if (hostsToMonitor.length === 0) {
-            console.log('[Monitor] Nenhum host para monitorar.');
             lastCheckTimestamp = new Date().toISOString();
             return;
         }
         for (const host of hostsToMonitor) {
             await checkHost(host);
         }
+        
+        let hostsWereRemoved = false;
+        const currentHosts = Object.keys(db.hosts);
+        for (const host of currentHosts) {
+            if (db.hosts[host].toBeDeleted) {
+                delete db.hosts[host];
+                hostsWereRemoved = true;
+                console.log(`[Monitor] Host ${host} removido automaticamente do banco de dados.`);
+            }
+        }
+        
         await saveDatabase();
+        if (hostsWereRemoved) {
+            await saveHostList();
+        }
+
         lastCheckTimestamp = new Date().toISOString();
         console.log('[Monitor] Ciclo de verificação concluído.');
     }, MONITORING_INTERVAL);
@@ -186,7 +215,7 @@ app.post('/api/hosts', async (req, res) => {
     if (db.hosts[host]) {
         return res.status(409).json({ message: 'Este host já está sendo monitorado.' });
     }
-    db.hosts[host] = { lastMtr: null, history: [] };
+    db.hosts[host] = { lastMtr: null, history: [], status: 'ok' };
     console.log(`[API] Host adicionado: ${host}. Verificação inicial em andamento...`);
     await checkHost(host);
     await saveDatabase();
@@ -207,15 +236,10 @@ app.delete('/api/hosts/:host', async (req, res) => {
 });
 
 // --- Inicialização do Servidor ---
-// ** CORREÇÃO APLICADA AQUI **
-// O servidor começa a "ouvir" na porta imediatamente.
-// As tarefas de longa duração (carregar DB, importar, iniciar monitoramento)
-// rodam em paralelo, sem impedir que o servidor responda a requisições.
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-    console.log(`Acesse o painel em: http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => { // <-- MUDANÇA AQUI
+    console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+    console.log(`Acesse o painel na sua rede local usando o IP da máquina, ex: http://192.168.1.10:${PORT}`);
     
-    // Inicializa o resto da aplicação
     (async () => {
         await loadDatabase();
         await importHostsFromFile();
