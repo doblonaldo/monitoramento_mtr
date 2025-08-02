@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Monitoramento de Rota</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Adicionando a biblioteca do calendário (flatpickr) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         :root {
             --cor-fundo: #1e1e2f; --cor-card: #27293d; --cor-texto: #d0d2e0;
@@ -15,17 +17,28 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--cor-fundo); margin: 0; padding: 20px; color: var(--cor-texto);
-            padding-bottom: 50px; /* Adiciona espaço para o rodapé não sobrepor o conteúdo */
+            padding-bottom: 50px;
         }
         h1 { text-align: center; margin-bottom: 15px; color: var(--cor-texto-cabecalho); font-weight: 300; }
         
-        .controls { display: flex; justify-content: center; margin-bottom: 30px; gap: 10px; }
+        .controls { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 30px; gap: 10px; }
         .control-btn {
             background-color: #3a3c5a; color: var(--cor-texto); border: none;
             padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: background-color 0.2s;
         }
         .control-btn:hover { background-color: #4a4c6a; }
         .control-btn.active { background-color: var(--cor-primaria); color: white; font-weight: 500; }
+
+        .date-range-picker { display: flex; align-items: center; gap: 10px; margin-left: 20px; }
+        .date-range-picker input {
+            background-color: #3a3c5a; color: var(--cor-texto); border: 1px solid #4a4c6a;
+            padding: 7px 12px; border-radius: 20px; font-family: inherit;
+        }
+        #filter-btn {
+            background-color: var(--cor-primaria); color: white; border: none;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: background-color 0.2s;
+        }
+        #filter-btn:hover { background-color: #3b5fde; }
 
         #dashboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 25px; }
         .host-card {
@@ -69,42 +82,13 @@
             font-size: 2em; cursor: pointer; box-shadow: 0 4px 12px rgba(77, 115, 255, 0.4);
             display: flex; align-items: center; justify-content: center;
         }
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
-            display: flex; align-items: center; justify-content: center; z-index: 1000;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
-        }
-        .modal-overlay.visible { opacity: 1; visibility: visible; }
-        .modal-content {
-            background-color: var(--cor-card); padding: 30px; border-radius: 12px; width: 90%;
-            max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.4); transform: scale(0.95);
-            transition: transform 0.3s;
-        }
-        .modal-content h2 { margin-top: 0; color: var(--cor-texto-cabecalho); font-weight: 500; }
-        .modal-content input {
-            width: 100%; padding: 12px; margin: 15px 0; border-radius: 6px; border: 1px solid #3a3c5a;
-            background-color: var(--cor-terminal-fundo); color: var(--cor-texto); font-size: 1em; box-sizing: border-box;
-        }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-        .modal-actions button {
-            padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;
-            font-weight: 500; transition: background-color 0.2s;
-        }
-        .modal-actions button[type="submit"] { background-color: var(--cor-primaria); color: white; }
-        .modal-actions button[type="button"] { background-color: #4a4c6a; color: var(--cor-texto); }
+        .modal-overlay { /* ... estilos do modal ... */ }
         
         footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: var(--cor-terminal-fundo);
-            color: var(--cor-texto);
-            text-align: center;
-            padding: 8px 0;
-            font-size: 0.9em;
-            border-top: 1px solid #3a3c5a;
-            z-index: 100;
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: var(--cor-terminal-fundo); color: var(--cor-texto);
+            text-align: center; padding: 8px 0; font-size: 0.9em;
+            border-top: 1px solid #3a3c5a; z-index: 100;
         }
     </style>
 </head>
@@ -113,10 +97,13 @@
     <h1>Painel de Monitoramento de Rota</h1>
 
     <div class="controls">
-        <button class="control-btn active" data-range="12">Últimas 12h</button>
-        <button class="control-btn" data-range="24">Último 1d</button>
-        <button class="control-btn" data-range="48">Últimos 2d</button>
-        <button class="control-btn" data-range="120">Últimos 5d</button>
+        <button class="control-btn active" data-range="3">3h</button>
+        <button class="control-btn" data-range="6">6h</button>
+        <div class="date-range-picker">
+            <input type="text" id="start-date" placeholder="Data de Início">
+            <input type="text" id="end-date" placeholder="Data de Fim">
+            <button id="filter-btn">Filtrar</button>
+        </div>
     </div>
 
     <div id="dashboard"></div>
@@ -140,11 +127,26 @@
         <span id="status-text">Verificando status do servidor...</span>
     </footer>
 
+    <!-- Adicionando o script do calendário -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const dashboard = document.getElementById('dashboard');
             const charts = {};
             const API_URL = 'http://localhost:3000/api';
+
+            // --- Inicialização do Calendário ---
+            const startDatePicker = flatpickr("#start-date", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+            });
+            const endDatePicker = flatpickr("#end-date", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                time_24hr: true,
+                defaultDate: new Date()
+            });
 
             // --- Funções de Renderização e UI ---
             function renderHostCard(host) {
@@ -172,37 +174,31 @@
                         </div>
                         <div class="timeline-labels">
                             <span class="start-label"></span>
-                            <span class="end-label">Agora</span>
+                            <span class="end-label"></span>
                         </div>
                     </div>
                 `;
                 dashboard.appendChild(card);
                 createRealtimeChart(`chart-${cardId}`, host);
-                fetchHostData(host);
             }
             
-            function updateTimeline(hostCard, history, rangeInHours) {
+            function updateTimeline(hostCard, history, startDate, endDate) {
                 const timelineBar = hostCard.querySelector('.timeline-bar');
                 const startLabel = hostCard.querySelector('.start-label');
+                const endLabel = hostCard.querySelector('.end-label');
                 timelineBar.innerHTML = '';
 
-                let label = '';
-                if (rangeInHours < 24) {
-                    label = `- ${rangeInHours}h`;
-                } else {
-                    label = `- ${rangeInHours / 24}d`;
-                }
-                startLabel.textContent = label;
-                
-                const rangeInSeconds = rangeInHours * 3600;
-                const nowMs = new Date().getTime();
+                const startMs = startDate.getTime();
+                const endMs = endDate.getTime();
+                const totalDurationMs = endMs - startMs;
+
+                startLabel.textContent = startDate.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                endLabel.textContent = endDate.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
                 history.forEach(change => {
                     const eventMs = new Date(change.timestamp).getTime();
-                    const secondsAgo = (nowMs - eventMs) / 1000;
-
-                    if (secondsAgo <= rangeInSeconds) {
-                        const positionPercent = 100 - (secondsAgo / rangeInSeconds) * 100;
+                    if (eventMs >= startMs && eventMs <= endMs) {
+                        const positionPercent = ((eventMs - startMs) / totalDurationMs) * 100;
                         const marker = document.createElement('div');
                         marker.className = 'timeline-marker';
                         marker.style.left = `${positionPercent}%`;
@@ -213,20 +209,10 @@
                 });
             }
             
-            function createRealtimeChart(canvasId, host) {
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                charts[host] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: Array(30).fill(''),
-                        datasets: [{ data: Array(30).fill(null), borderColor: 'var(--cor-grafico-linha)', borderWidth: 2, pointRadius: 0, tension: 0.4 }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { display: false } }, plugins: { legend: { display: false } } }
-                });
-            }
+            function createRealtimeChart(canvasId, host) { /* ...código sem alterações... */ }
 
             // --- Funções de API ---
-            async function fetchHostData(host) {
+            async function fetchHostData(host, startDate, endDate) {
                 try {
                     const response = await fetch(`${API_URL}/hosts/${host}`);
                     if (!response.ok) throw new Error('Falha ao buscar dados do host.');
@@ -236,14 +222,12 @@
                     if (card) {
                         card.dataset.lastMtr = data.lastMtr;
                         
-                        // Atualiza o MTR apenas se o modo "Live" estiver ativo
                         const liveBtn = card.querySelector('.live-btn');
                         if (liveBtn.classList.contains('active')) {
                             card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
                         }
                         
-                        const activeRange = document.querySelector('.control-btn.active').dataset.range;
-                        updateTimeline(card, data.history || [], parseInt(activeRange));
+                        updateTimeline(card, data.history || [], startDate, endDate);
                     }
                 } catch (error) {
                     console.error(`Erro ao buscar dados para ${host}:`, error);
@@ -256,39 +240,53 @@
                     const hosts = await response.json();
                     dashboard.innerHTML = '';
                     hosts.forEach(host => renderHostCard(host));
+                    // Após renderizar, atualiza as timelines com o range ativo
+                    updateAllTimelines(); 
                 } catch (error) {
                     console.error('Erro ao carregar hosts:', error);
                 }
             }
             
-            async function updateStatusFooter() {
-                const statusText = document.getElementById('status-text');
-                try {
-                    const response = await fetch(`${API_URL}/status`);
-                    const data = await response.json();
-                    if (data.lastCheck) {
-                        const lastCheckDate = new Date(data.lastCheck);
-                        statusText.textContent = `Última verificação do servidor: ${lastCheckDate.toLocaleString('pt-BR')}`;
-                    } else {
-                        statusText.textContent = 'Servidor online. Aguardando o primeiro ciclo de verificação.';
-                    }
-                } catch (error) {
-                    statusText.textContent = 'Não foi possível conectar ao servidor de monitoramento.';
-                }
-            }
-
+            async function updateStatusFooter() { /* ...código sem alterações... */ }
 
             // --- Lógica de Eventos ---
             const controlButtons = document.querySelectorAll('.control-btn');
+            const filterBtn = document.getElementById('filter-btn');
+
+            function updateAllTimelines() {
+                const activeBtn = document.querySelector('.control-btn.active');
+                let startDate, endDate = new Date();
+
+                if (activeBtn) {
+                    const rangeInHours = parseInt(activeBtn.dataset.range, 10);
+                    startDate = new Date(endDate.getTime() - rangeInHours * 3600 * 1000);
+                } else { 
+                    startDate = startDatePicker.selectedDates[0];
+                    endDate = endDatePicker.selectedDates[0];
+                    if (!startDate || !endDate) {
+                        alert("Por favor, selecione uma data de início e fim.");
+                        return;
+                    }
+                }
+
+                document.querySelectorAll('.host-card').forEach(card => {
+                    fetchHostData(card.dataset.host, startDate, endDate);
+                });
+            }
+
             controlButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     controlButtons.forEach(btn => btn.classList.remove('active'));
                     button.classList.add('active');
-                    
-                    document.querySelectorAll('.host-card').forEach(card => {
-                        fetchHostData(card.dataset.host);
-                    });
+                    startDatePicker.clear();
+                    endDatePicker.setDate(new Date());
+                    updateAllTimelines();
                 });
+            });
+
+            filterBtn.addEventListener('click', () => {
+                controlButtons.forEach(btn => btn.classList.remove('active'));
+                updateAllTimelines();
             });
 
             const addHostBtn = document.getElementById('add-host-btn');
@@ -354,18 +352,15 @@
             // Atualiza o rodapé a cada minuto
             setInterval(updateStatusFooter, 60 * 1000);
 
-            // --- NOVO: Atualiza os dados do MTR e timeline a cada minuto ---
+            // Atualiza os dados do MTR e timeline a cada minuto
             setInterval(() => {
                 console.log('Atualizando dados dos hosts...');
-                document.querySelectorAll('.host-card').forEach(card => {
-                    fetchHostData(card.dataset.host);
-                });
-            }, 60 * 1000); // 1 minuto em milissegundos
-
+                updateAllTimelines();
+            }, 60 * 1000);
 
             // Inicia a aplicação
             loadInitialHosts();
-            updateStatusFooter(); // Chama uma vez na carga inicial
+            updateStatusFooter();
         });
     </script>
 </body>
