@@ -11,33 +11,57 @@
             --cor-texto-cabecalho: #ffffff; --cor-sombra: rgba(0, 0, 0, 0.2);
             --cor-terminal-fundo: #1b1b29; --cor-primaria: #4d73ff;
             --cor-mudanca: #ff5722; --cor-grafico-linha: #00e1ff; --cor-remover: #f44336;
-            --cor-sucesso: #4caf50; --cor-erro: #f44336;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--cor-fundo); margin: 0; padding: 20px; color: var(--cor-texto);
         }
-        h1 { text-align: center; margin-bottom: 30px; color: var(--cor-texto-cabecalho); font-weight: 300; }
+        h1 { text-align: center; margin-bottom: 15px; color: var(--cor-texto-cabecalho); font-weight: 300; }
+        
+        .controls { display: flex; justify-content: center; margin-bottom: 30px; gap: 10px; }
+        .control-btn {
+            background-color: #3a3c5a; color: var(--cor-texto); border: none;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .control-btn:hover { background-color: #4a4c6a; }
+        .control-btn.active { background-color: var(--cor-primaria); color: white; font-weight: 500; }
+
         #dashboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(500px, 1fr)); gap: 25px; }
         .host-card {
             background-color: var(--cor-card); border-radius: 12px; box-shadow: 0 4px 15px var(--cor-sombra);
             display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
-        .host-header { padding: 15px 20px; border-bottom: 1px solid #3a3c5a; font-size: 1.2em; font-weight: 500; color: var(--cor-texto-cabecalho); }
+        .host-header {
+            padding: 15px 20px; border-bottom: 1px solid #3a3c5a; font-size: 1.2em;
+            font-weight: 500; color: var(--cor-texto-cabecalho); display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .live-btn {
+            background-color: #3a3c5a; color: var(--cor-texto); border: none;
+            font-size: 0.7em; padding: 5px 10px; border-radius: 15px;
+            cursor: pointer; transition: background-color 0.2s, color 0.2s;
+        }
+        .live-btn.active { background-color: #28a745; color: white; }
+
         .remove-host-btn {
-            position: absolute; top: 15px; right: 15px; background: none; border: none;
-            color: #8a8d9f; font-size: 1.5em; cursor: pointer; padding: 5px; line-height: 1; transition: color 0.2s;
+            background: none; border: none; color: #8a8d9f; font-size: 1.5em;
+            cursor: pointer; padding: 5px; line-height: 1; transition: color 0.2s;
         }
         .remove-host-btn:hover { color: var(--cor-remover); }
+
         .chart-container { position: relative; height: 150px; padding: 10px; }
         .mtr-output { background-color: var(--cor-terminal-fundo); padding: 15px; flex-grow: 1; overflow-x: auto; border-top: 1px solid #3a3c5a; border-bottom: 1px solid #3a3c5a; }
         .mtr-output pre { margin: 0; color: var(--cor-texto); font-family: 'Fira Code', 'Consolas', 'Menlo', monospace; font-size: 0.85em; white-space: pre; }
-        .timeline { background-color: #2f3148; padding: 10px 20px; height: 40px; display: flex; align-items: center; position: relative; }
+        
+        .timeline { background-color: #2f3148; padding: 10px 20px; height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+        .timeline-bar-container { width: 100%; height: 20px; display: flex; align-items: center; position: relative; }
         .timeline-bar { width: 100%; height: 4px; background-color: #4a4c6a; position: relative; border-radius: 2px; }
         .timeline-marker {
             position: absolute; width: 3px; height: 20px; background-color: var(--cor-mudanca);
             cursor: pointer; top: 50%; transform: translateY(-50%); border-radius: 2px;
         }
+        .timeline-labels { display: flex; justify-content: space-between; font-size: 0.7em; color: #8a8d9f; padding-top: 5px; }
+
         #add-host-btn {
             position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
             background-color: var(--cor-primaria); color: white; border: none; border-radius: 50%;
@@ -55,7 +79,6 @@
             max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.4); transform: scale(0.95);
             transition: transform 0.3s;
         }
-        .modal-overlay.visible .modal-content { transform: scale(1); }
         .modal-content h2 { margin-top: 0; color: var(--cor-texto-cabecalho); font-weight: 500; }
         .modal-content input {
             width: 100%; padding: 12px; margin: 15px 0; border-radius: 6px; border: 1px solid #3a3c5a;
@@ -68,28 +91,20 @@
         }
         .modal-actions button[type="submit"] { background-color: var(--cor-primaria); color: white; }
         .modal-actions button[type="button"] { background-color: #4a4c6a; color: var(--cor-texto); }
-        
-        .toast {
-            position: fixed; bottom: 20px; left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 25px;
-            border-radius: 25px;
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
-        }
-        .toast.show { opacity: 1; bottom: 30px; }
-        .toast.success { background-color: var(--cor-sucesso); }
-        .toast.error { background-color: var(--cor-erro); }
     </style>
 </head>
 <body>
 
     <h1>Painel de Monitoramento de Rota</h1>
+
+    <div class="controls">
+        <button class="control-btn active" data-range="48">Últimos 2d</button>
+        <button class="control-btn" data-range="168">Últimos 7d</button>
+        <button class="control-btn" data-range="336">Últimos 14d</button>
+    </div>
+
     <div id="dashboard"></div>
+
     <button id="add-host-btn" title="Adicionar novo destino">+</button>
 
     <div id="add-host-modal" class="modal-overlay">
@@ -113,20 +128,7 @@
             const charts = {};
             const API_URL = 'http://localhost:3000/api';
 
-            function showToast(message, type = 'success') {
-                const container = document.getElementById('toast-container');
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.textContent = message;
-                container.appendChild(toast);
-                
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            }
-
+            // --- Funções de Renderização e UI ---
             function renderHostCard(host) {
                 const cardId = `card-${host.replace(/\./g, '-')}`;
                 if (document.getElementById(cardId)) return;
@@ -137,24 +139,37 @@
                 card.dataset.host = host;
 
                 card.innerHTML = `
-                    <button class="remove-host-btn" title="Remover host">&times;</button>
-                    <div class="host-header">Destino: ${host}</div>
+                    <div class="host-header">
+                        <span>Destino: ${host}</span>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <button class="live-btn active" title="Mostrar resultado mais recente">Live</button>
+                            <button class="remove-host-btn" title="Remover host">&times;</button>
+                        </div>
+                    </div>
                     <div class="chart-container"><canvas id="chart-${cardId}"></canvas></div>
                     <div class="mtr-output"><pre><code>Carregando...</code></pre></div>
-                    <div class="timeline"><div class="timeline-bar"></div></div>
+                    <div class="timeline">
+                        <div class="timeline-bar-container">
+                            <div class="timeline-bar"></div>
+                        </div>
+                        <div class="timeline-labels">
+                            <span class="start-label"></span>
+                            <span class="end-label">Agora</span>
+                        </div>
+                    </div>
                 `;
                 dashboard.appendChild(card);
                 createRealtimeChart(`chart-${cardId}`, host);
                 fetchHostData(host);
             }
             
-            function updateTimeline(host, history) {
-                const card = document.getElementById(`card-${host.replace(/\./g, '-')}`);
-                if (!card) return;
-                const timelineBar = card.querySelector('.timeline-bar');
+            function updateTimeline(hostCard, history, rangeInHours) {
+                const timelineBar = hostCard.querySelector('.timeline-bar');
+                const startLabel = hostCard.querySelector('.start-label');
                 timelineBar.innerHTML = '';
 
-                const rangeInSeconds = 30 * 24 * 3600;
+                startLabel.textContent = `- ${rangeInHours / 24}d`;
+                const rangeInSeconds = rangeInHours * 3600;
                 const nowMs = new Date().getTime();
 
                 history.forEach(change => {
@@ -172,7 +187,7 @@
                     }
                 });
             }
-
+            
             function createRealtimeChart(canvasId, host) {
                 const ctx = document.getElementById(canvasId).getContext('2d');
                 charts[host] = new Chart(ctx, {
@@ -185,6 +200,7 @@
                 });
             }
 
+            // --- Funções de API ---
             async function fetchHostData(host) {
                 try {
                     const response = await fetch(`${API_URL}/hosts/${host}`);
@@ -193,8 +209,11 @@
                     
                     const card = document.getElementById(`card-${host.replace(/\./g, '-')}`);
                     if (card) {
+                        card.dataset.lastMtr = data.lastMtr; // Armazena o último resultado
                         card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
-                        updateTimeline(host, data.history || []);
+                        
+                        const activeRange = document.querySelector('.control-btn.active').dataset.range;
+                        updateTimeline(card, data.history || [], parseInt(activeRange));
                     }
                 } catch (error) {
                     console.error(`Erro ao buscar dados para ${host}:`, error);
@@ -209,77 +228,77 @@
                     hosts.forEach(host => renderHostCard(host));
                 } catch (error) {
                     console.error('Erro ao carregar hosts:', error);
-                    dashboard.innerHTML = '<p>Não foi possível carregar os hosts. Verifique se o backend está rodando.</p>';
                 }
             }
+
+            // --- Lógica de Eventos ---
+            const controlButtons = document.querySelectorAll('.control-btn');
+            controlButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    controlButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    document.querySelectorAll('.host-card').forEach(card => {
+                        fetchHostData(card.dataset.host);
+                    });
+                });
+            });
 
             const addHostBtn = document.getElementById('add-host-btn');
             const addHostModal = document.getElementById('add-host-modal');
             const addHostForm = document.getElementById('add-host-form');
-            const cancelAddHostBtn = document.getElementById('cancel-add-host');
-            const newHostInput = document.getElementById('new-host-input');
-
             const closeModal = () => addHostModal.classList.remove('visible');
             addHostBtn.addEventListener('click', () => addHostModal.classList.add('visible'));
-            cancelAddHostBtn.addEventListener('click', closeModal);
+            document.getElementById('cancel-add-host').addEventListener('click', closeModal);
             addHostModal.addEventListener('click', e => e.target === addHostModal && closeModal());
 
             addHostForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
-                const newHost = newHostInput.value.trim();
-                const submitButton = addHostForm.querySelector('button[type="submit"]');
-
+                const newHost = document.getElementById('new-host-input').value.trim();
                 if (newHost) {
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Adicionando...';
-                    
                     try {
                         const response = await fetch(`${API_URL}/hosts`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ host: newHost })
                         });
-                        
-                        if (!response.ok) {
-                             const errorData = await response.json();
-                             throw new Error(errorData.message || 'Falha ao adicionar host.');
-                        }
-                        
+                        if (!response.ok) throw new Error((await response.json()).message);
                         location.reload();
-
-                    } catch (error) { 
-                        showToast(error.message, 'error');
-                    } finally {
-                        closeModal();
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Adicionar';
-                        newHostInput.value = '';
-                    }
+                    } catch (error) { alert(error.message); }
                 }
             });
 
             dashboard.addEventListener('click', async (event) => {
-                if (event.target.classList.contains('remove-host-btn')) {
-                    const hostCard = event.target.closest('.host-card');
-                    const hostToRemove = hostCard.dataset.host;
-                    
-                    try {
-                        const response = await fetch(`${API_URL}/hosts/${hostToRemove}`, { method: 'DELETE' });
-                        if (!response.ok) throw new Error('Falha ao remover host.');
-                        hostCard.remove();
-                        delete charts[hostToRemove];
-                        showToast(`Host "${hostToRemove}" removido.`);
-                    } catch (error) { 
-                        showToast(error.message, 'error');
-                    }
+                const target = event.target;
+                const hostCard = target.closest('.host-card');
+                if (!hostCard) return;
+
+                const mtrOutputPre = hostCard.querySelector('.mtr-output pre code');
+                const liveBtn = hostCard.querySelector('.live-btn');
+
+                // Clicar no marcador da timeline
+                if (target.classList.contains('timeline-marker')) {
+                    mtrOutputPre.textContent = target.dataset.mtr;
+                    liveBtn.classList.remove('active');
                 }
-                if (event.target.classList.contains('timeline-marker')) {
-                    const hostCard = event.target.closest('.host-card');
-                    const mtrOutputPre = hostCard.querySelector('.mtr-output pre code');
-                    mtrOutputPre.textContent = event.target.dataset.mtr;
+
+                // Clicar no botão "Live"
+                if (target.classList.contains('live-btn')) {
+                    mtrOutputPre.textContent = hostCard.dataset.lastMtr || 'Carregando...';
+                    liveBtn.classList.add('active');
+                }
+                
+                // Clicar no botão "Remover"
+                if (target.classList.contains('remove-host-btn')) {
+                    const hostToRemove = hostCard.dataset.host;
+                    if (confirm(`Tem certeza que deseja remover "${hostToRemove}"?`)) {
+                        await fetch(`${API_URL}/hosts/${hostToRemove}`, { method: 'DELETE' });
+                        hostCard.remove();
+                    }
                 }
             });
             
+            // Simulação de atualização de latência (gráfico)
             setInterval(() => {
                 Object.values(charts).forEach(chart => {
                     chart.data.datasets[0].data.shift();
