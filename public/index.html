@@ -15,6 +15,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--cor-fundo); margin: 0; padding: 20px; color: var(--cor-texto);
+            padding-bottom: 50px; /* Adiciona espaço para o rodapé não sobrepor o conteúdo */
         }
         h1 { text-align: center; margin-bottom: 15px; color: var(--cor-texto-cabecalho); font-weight: 300; }
         
@@ -91,6 +92,20 @@
         }
         .modal-actions button[type="submit"] { background-color: var(--cor-primaria); color: white; }
         .modal-actions button[type="button"] { background-color: #4a4c6a; color: var(--cor-texto); }
+        
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--cor-terminal-fundo);
+            color: var(--cor-texto);
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.9em;
+            border-top: 1px solid #3a3c5a;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
@@ -120,8 +135,10 @@
             </form>
         </div>
     </div>
-    
-    <div id="toast-container"></div>
+
+    <footer>
+        <span id="status-text">Verificando status do servidor...</span>
+    </footer>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -217,8 +234,13 @@
                     
                     const card = document.getElementById(`card-${host.replace(/\./g, '-')}`);
                     if (card) {
-                        card.dataset.lastMtr = data.lastMtr; // Armazena o último resultado
-                        card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
+                        card.dataset.lastMtr = data.lastMtr;
+                        
+                        // Atualiza o MTR apenas se o modo "Live" estiver ativo
+                        const liveBtn = card.querySelector('.live-btn');
+                        if (liveBtn.classList.contains('active')) {
+                            card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
+                        }
                         
                         const activeRange = document.querySelector('.control-btn.active').dataset.range;
                         updateTimeline(card, data.history || [], parseInt(activeRange));
@@ -238,6 +260,23 @@
                     console.error('Erro ao carregar hosts:', error);
                 }
             }
+            
+            async function updateStatusFooter() {
+                const statusText = document.getElementById('status-text');
+                try {
+                    const response = await fetch(`${API_URL}/status`);
+                    const data = await response.json();
+                    if (data.lastCheck) {
+                        const lastCheckDate = new Date(data.lastCheck);
+                        statusText.textContent = `Última verificação do servidor: ${lastCheckDate.toLocaleString('pt-BR')}`;
+                    } else {
+                        statusText.textContent = 'Servidor online. Aguardando o primeiro ciclo de verificação.';
+                    }
+                } catch (error) {
+                    statusText.textContent = 'Não foi possível conectar ao servidor de monitoramento.';
+                }
+            }
+
 
             // --- Lógica de Eventos ---
             const controlButtons = document.querySelectorAll('.control-btn');
@@ -284,19 +323,16 @@
                 const mtrOutputPre = hostCard.querySelector('.mtr-output pre code');
                 const liveBtn = hostCard.querySelector('.live-btn');
 
-                // Clicar no marcador da timeline
                 if (target.classList.contains('timeline-marker')) {
                     mtrOutputPre.textContent = target.dataset.mtr;
                     liveBtn.classList.remove('active');
                 }
 
-                // Clicar no botão "Live"
                 if (target.classList.contains('live-btn')) {
                     mtrOutputPre.textContent = hostCard.dataset.lastMtr || 'Carregando...';
                     liveBtn.classList.add('active');
                 }
                 
-                // Clicar no botão "Remover"
                 if (target.classList.contains('remove-host-btn')) {
                     const hostToRemove = hostCard.dataset.host;
                     if (confirm(`Tem certeza que deseja remover "${hostToRemove}"?`)) {
@@ -314,8 +350,22 @@
                     chart.update('quiet');
                 });
             }, 2000);
+            
+            // Atualiza o rodapé a cada minuto
+            setInterval(updateStatusFooter, 60 * 1000);
 
+            // --- NOVO: Atualiza os dados do MTR e timeline a cada minuto ---
+            setInterval(() => {
+                console.log('Atualizando dados dos hosts...');
+                document.querySelectorAll('.host-card').forEach(card => {
+                    fetchHostData(card.dataset.host);
+                });
+            }, 60 * 1000); // 1 minuto em milissegundos
+
+
+            // Inicia a aplicação
             loadInitialHosts();
+            updateStatusFooter(); // Chama uma vez na carga inicial
         });
     </script>
 </body>
