@@ -28,6 +28,7 @@ async function loadDatabase() {
         const data = await fs.readFile(DB_FILE, 'utf-8');
         let parsedData = JSON.parse(data);
 
+        // Garante que db.hosts seja sempre um objeto, corrigindo o bug do array.
         if (!parsedData.hosts || Array.isArray(parsedData.hosts)) {
             console.log('[DB] Estrutura de dados inválida ou antiga detectada. Resetando para objeto.');
             parsedData.hosts = {};
@@ -56,18 +57,16 @@ function executeMtr(host) {
         if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
             return reject(new Error('Host inválido.'));
         }
-        const command = `mtr -r -n -c 10 -z ${host}`;
+        const command = `mtr -r -n -c 10 -z -4 ${host}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 return reject(new Error(`Falha ao testar o host ${host}: ${stderr}`));
             }
             
-            // ** CORREÇÃO REAPLICADA AQUI **
             // Processa a saída do MTR para manter apenas as colunas de rota.
             const lines = stdout.trim().split('\n');
             const headerLine = lines.find(line => line.includes('Loss%'));
             
-            // Se não encontrar o cabeçalho, retorna a saída como está (pode ser um erro do mtr)
             if (!headerLine) {
                 resolve(stdout);
                 return;
@@ -78,7 +77,6 @@ function executeMtr(host) {
             const formattedLines = lines
                 .slice(1) // Pula a linha "Start:"
                 .map(line => {
-                    // Pega a parte da string antes da coluna "Loss%" e remove espaços extras
                     return line.substring(0, lossIndex).trimEnd();
                 });
 
@@ -94,17 +92,23 @@ async function checkHost(host) {
         const newMtrResult = await executeMtr(host);
         const hostData = db.hosts[host];
 
+        // Se for o primeiro teste, salva o resultado em "lastMtr" E cria o primeiro registro no histórico.
         if (!hostData.lastMtr) {
-            console.log(`[Monitor] Primeiro resultado para ${host}. Salvando.`);
+            console.log(`[Monitor] Primeiro resultado para ${host}. Salvando como base.`);
             hostData.lastMtr = newMtrResult;
+            hostData.history.push({
+                timestamp: new Date().toISOString(),
+                mtrLog: newMtrResult
+            });
         } else if (hostData.lastMtr !== newMtrResult) {
+            // Se o resultado mudou, registra no histórico
             console.log(`[Monitor] MUDANÇA DETECTADA para ${host}!`);
             const changeEvent = {
                 timestamp: new Date().toISOString(),
                 mtrLog: newMtrResult
             };
             hostData.history.push(changeEvent);
-            hostData.lastMtr = newMtrResult;
+            hostData.lastMtr = newMtrResult; // Atualiza o último resultado
         } else {
             console.log(`[Monitor] Nenhuma mudança para ${host}.`);
         }
