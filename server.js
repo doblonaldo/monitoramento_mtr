@@ -26,8 +26,14 @@ async function loadDatabase() {
     try {
         await fs.access(DB_FILE);
         const data = await fs.readFile(DB_FILE, 'utf-8');
-        db = JSON.parse(data);
-        if (!db.hosts) db.hosts = {};
+        let parsedData = JSON.parse(data);
+
+        if (!parsedData.hosts || Array.isArray(parsedData.hosts)) {
+            console.log('[DB] Estrutura de dados inválida ou antiga detectada. Resetando para objeto.');
+            parsedData.hosts = {};
+        }
+        
+        db = parsedData;
         console.log('[DB] Banco de dados carregado com sucesso.');
     } catch (error) {
         console.log('[DB] Arquivo db.json não encontrado. Criando um novo.');
@@ -56,19 +62,21 @@ function executeMtr(host) {
                 return reject(new Error(`Falha ao testar o host ${host}: ${stderr}`));
             }
             
-            // ** AJUSTE APLICADO AQUI **
+            // ** CORREÇÃO REAPLICADA AQUI **
             // Processa a saída do MTR para manter apenas as colunas de rota.
             const lines = stdout.trim().split('\n');
             const headerLine = lines.find(line => line.includes('Loss%'));
+            
+            // Se não encontrar o cabeçalho, retorna a saída como está (pode ser um erro do mtr)
             if (!headerLine) {
-                // Se não encontrar o cabeçalho, retorna a saída como está (pode ser um erro do mtr)
                 resolve(stdout);
                 return;
             }
 
             const lossIndex = headerLine.indexOf('Loss%');
             
-            const formattedLines = lines.slice(1) // Pula a linha "Start:"
+            const formattedLines = lines
+                .slice(1) // Pula a linha "Start:"
                 .map(line => {
                     // Pega a parte da string antes da coluna "Loss%" e remove espaços extras
                     return line.substring(0, lossIndex).trimEnd();
@@ -86,23 +94,20 @@ async function checkHost(host) {
         const newMtrResult = await executeMtr(host);
         const hostData = db.hosts[host];
 
-        // Se for o primeiro teste, apenas salva o resultado
         if (!hostData.lastMtr) {
             console.log(`[Monitor] Primeiro resultado para ${host}. Salvando.`);
             hostData.lastMtr = newMtrResult;
         } else if (hostData.lastMtr !== newMtrResult) {
-            // Se o resultado mudou, registra no histórico
             console.log(`[Monitor] MUDANÇA DETECTADA para ${host}!`);
             const changeEvent = {
                 timestamp: new Date().toISOString(),
                 mtrLog: newMtrResult
             };
             hostData.history.push(changeEvent);
-            hostData.lastMtr = newMtrResult; // Atualiza o último resultado
+            hostData.lastMtr = newMtrResult;
         } else {
             console.log(`[Monitor] Nenhuma mudança para ${host}.`);
         }
-
     } catch (error) {
         console.error(error.message);
     }
@@ -122,21 +127,16 @@ function startMonitoring() {
             await checkHost(host);
         }
         
-        // Salva todas as mudanças no final do ciclo
         await saveDatabase();
         console.log('[Monitor] Ciclo de verificação concluído.');
-
     }, MONITORING_INTERVAL);
 }
 
 // --- Rotas da API ---
-
-// Retorna a lista de hosts
 app.get('/api/hosts', (req, res) => {
     res.status(200).json(Object.keys(db.hosts));
 });
 
-// Retorna os dados completos de um host (último MTR e histórico)
 app.get('/api/hosts/:host', (req, res) => {
     const host = req.params.host;
     if (db.hosts[host]) {
@@ -146,7 +146,6 @@ app.get('/api/hosts/:host', (req, res) => {
     }
 });
 
-// Adiciona um novo host
 app.post('/api/hosts', async (req, res) => {
     const { host } = req.body;
     if (!host) {
@@ -156,20 +155,15 @@ app.post('/api/hosts', async (req, res) => {
         return res.status(409).json({ message: 'Este host já está sendo monitorado.' });
     }
 
-    db.hosts[host] = {
-        lastMtr: null,
-        history: []
-    };
+    db.hosts[host] = { lastMtr: null, history: [] };
     
     console.log(`[API] Host adicionado: ${host}. Verificação inicial em andamento...`);
-    // Executa uma verificação imediata para o novo host
     await checkHost(host);
     await saveDatabase();
     
     res.status(201).json({ message: `Host ${host} adicionado com sucesso.` });
 });
 
-// Remove um host
 app.delete('/api/hosts/:host', async (req, res) => {
     const hostToRemove = req.params.host;
     if (!db.hosts[hostToRemove]) {
@@ -185,7 +179,7 @@ app.delete('/api/hosts/:host', async (req, res) => {
 // --- Inicialização do Servidor ---
 (async () => {
     await loadDatabase();
-    startMonitoring(); // Inicia o monitoramento em segundo plano
+    startMonitoring();
     app.listen(PORT, () => {
         console.log(`Servidor rodando na porta ${PORT}`);
         console.log(`Acesse o painel em: http://localhost:${PORT}`);
