@@ -1,0 +1,12 @@
+# Ignorar a pasta de dependências do Node.js
+# Esta é a regra mais importante!
+node_modules/
+
+# Ignorar arquivos de log
+*.log
+
+# Ignorar arquivos de ambiente (que podem conter senhas e chaves de API)
+.env
+
+# Ignorar o nosso "banco de dados" local
+db.json
