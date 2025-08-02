@@ -98,9 +98,10 @@
     <h1>Painel de Monitoramento de Rota</h1>
 
     <div class="controls">
-        <button class="control-btn active" data-range="48">Últimos 2d</button>
-        <button class="control-btn" data-range="168">Últimos 7d</button>
-        <button class="control-btn" data-range="336">Últimos 14d</button>
+        <button class="control-btn active" data-range="12">Últimas 12h</button>
+        <button class="control-btn" data-range="24">Último 1d</button>
+        <button class="control-btn" data-range="48">Últimos 2d</button>
+        <button class="control-btn" data-range="120">Últimos 5d</button>
     </div>
 
     <div id="dashboard"></div>
@@ -168,7 +169,14 @@
                 const startLabel = hostCard.querySelector('.start-label');
                 timelineBar.innerHTML = '';
 
-                startLabel.textContent = `- ${rangeInHours / 24}d`;
+                let label = '';
+                if (rangeInHours < 24) {
+                    label = `- ${rangeInHours}h`;
+                } else {
+                    label = `- ${rangeInHours / 24}d`;
+                }
+                startLabel.textContent = label;
+                
                 const rangeInSeconds = rangeInHours * 3600;
                 const nowMs = new Date().getTime();
 
