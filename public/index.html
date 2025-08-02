@@ -27,24 +27,6 @@
         }
         h1 { text-align: center; color: var(--cor-texto-cabecalho); font-weight: 300; margin: 0; }
         
-        #refresh-btn {
-            background: none;
-            border: none;
-            color: var(--cor-texto);
-            cursor: pointer;
-            font-size: 1.5em;
-            position: absolute;
-            right: 20px;
-            transition: transform 0.3s ease, color 0.2s;
-        }
-        #refresh-btn:hover { color: var(--cor-primaria); }
-        #refresh-btn.loading { animation: spin 1s linear infinite; }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
         .controls { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 30px; gap: 10px; }
         .control-btn {
             background-color: #3a3c5a; color: var(--cor-texto); border: none;
@@ -100,24 +82,50 @@
         }
         .timeline-labels { display: flex; justify-content: space-between; font-size: 0.7em; color: #8a8d9f; padding-top: 5px; }
 
-        #add-host-btn {
+        .floating-actions {
             position: fixed;
             bottom: 50px;
             right: 30px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .floating-btn {
             width: 60px;
             height: 60px;
             background-color: var(--cor-primaria);
             color: white;
             border: none;
             border-radius: 50%;
-            font-size: 2em;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(77, 115, 255, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1001;
+            transition: background-color 0.2s, transform 0.2s;
         }
+        .floating-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #add-host-btn {
+            font-size: 2em;
+        }
+
+        #refresh-btn {
+            background-color: #3a3c5a;
+            font-size: 1.5em;
+        }
+        #refresh-btn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
             display: flex; align-items: center; justify-content: center; z-index: 1000;
@@ -153,9 +161,6 @@
 <body>
     <div class="main-header">
         <h1>Painel de Monitoramento de Rota</h1>
-        <button id="refresh-btn" title="Atualizar dados">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-        </button>
     </div>
 
     <div class="controls">
@@ -170,7 +175,12 @@
 
     <div id="dashboard"></div>
 
-    <button id="add-host-btn" title="Adicionar novo destino">+</button>
+    <div class="floating-actions">
+        <button id="refresh-btn" class="floating-btn" title="Atualizar dados">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
+        <button id="add-host-btn" class="floating-btn" title="Adicionar novo destino">+</button>
+    </div>
 
     <div id="add-host-modal" class="modal-overlay">
         <div class="modal-content">
@@ -434,11 +444,10 @@
             setInterval(updateAllTimelines, 60 * 1000);
 
             // **CORREÇÃO APLICADA AQUI**
-            // Adiciona um pequeno atraso antes de carregar os dados iniciais
             setTimeout(() => {
                 loadInitialHosts();
                 updateStatusFooter();
-            }, 500); // Atraso de 500ms
+            }, 500);
         });
     </script>
 </body>
