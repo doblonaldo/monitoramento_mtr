@@ -85,7 +85,7 @@
         .floating-actions {
             position: fixed;
             bottom: 50px;
-            right: 30px;
+            right: 20px;
             z-index: 1001;
             display: flex;
             flex-direction: column;
@@ -93,8 +93,8 @@
         }
 
         .floating-btn {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background-color: var(--cor-primaria);
             color: white;
             border: none;
@@ -111,12 +111,12 @@
         }
 
         #add-host-btn {
-            font-size: 2em;
+            font-size: 1.8em;
         }
 
         #refresh-btn {
             background-color: #3a3c5a;
-            font-size: 1.5em;
+            font-size: 1.2em;
         }
         #refresh-btn.loading svg {
             animation: spin 1s linear infinite;
@@ -156,6 +156,32 @@
             text-align: center; padding: 8px 0; font-size: 0.9em;
             border-top: 1px solid #3a3c5a; z-index: 100;
         }
+
+        /* --- MUDANÇA PARA RESPONSIVIDADE --- */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.2em;
+            }
+            .controls {
+                flex-direction: column;
+            }
+            .date-range-picker {
+                margin-left: 0;
+                width: 100%;
+                flex-direction: column;
+            }
+            .date-range-picker input, .date-range-picker button {
+                width: 90%;
+                box-sizing: border-box;
+            }
+            #dashboard {
+                /* Em telas pequenas, muda para uma única coluna */
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -177,7 +203,7 @@
 
     <div class="floating-actions">
         <button id="refresh-btn" class="floating-btn" title="Atualizar dados">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
         </button>
         <button id="add-host-btn" class="floating-btn" title="Adicionar novo destino">+</button>
     </div>
@@ -204,7 +230,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             const dashboard = document.getElementById('dashboard');
             const charts = {};
-            const API_URL = 'http://localhost:3000/api';
+            // --- MUDANÇA AQUI ---
+            const API_URL = '/api'; // Usa um caminho relativo que funciona com localhost e IP
 
             const startDatePicker = flatpickr("#start-date", {
                 enableTime: true,
@@ -277,7 +304,17 @@
                 });
             }
             
-            function createRealtimeChart(canvasId, host) { /* ...código sem alterações... */ }
+            function createRealtimeChart(canvasId, host) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                charts[host] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: Array(30).fill(''),
+                        datasets: [{ data: Array(30).fill(null), borderColor: 'var(--cor-grafico-linha)', borderWidth: 2, pointRadius: 0, tension: 0.4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { display: false } }, plugins: { legend: { display: false } } }
+                });
+            }
 
             async function fetchHostData(host, startDate, endDate) {
                 try {
@@ -302,12 +339,14 @@
             async function loadInitialHosts() {
                 try {
                     const response = await fetch(`${API_URL}/hosts`);
+                    if (!response.ok) throw new Error('Falha ao carregar hosts.');
                     const hosts = await response.json();
                     dashboard.innerHTML = '';
                     hosts.forEach(host => renderHostCard(host));
                     updateAllTimelines(); 
                 } catch (error) {
                     console.error('Erro ao carregar hosts:', error);
+                    dashboard.innerHTML = `<p style="color: var(--cor-remover);">${error.message}. Verifique se o backend está rodando.</p>`;
                 }
             }
             
@@ -315,6 +354,7 @@
                 const statusText = document.getElementById('status-text');
                 try {
                     const response = await fetch(`${API_URL}/status`);
+                    if (!response.ok) throw new Error('Falha ao buscar status.');
                     const data = await response.json();
                     if (data.lastCheck) {
                         const lastCheckDate = new Date(data.lastCheck);
@@ -390,7 +430,7 @@
                 event.preventDefault();
                 const newHost = document.getElementById('new-host-input').value.trim();
                 if (newHost) {
-                    closeModal(); // **CORREÇÃO APLICADA AQUI**
+                    closeModal();
                     try {
                         const response = await fetch(`${API_URL}/hosts`, {
                             method: 'POST',
@@ -443,7 +483,6 @@
             setInterval(updateStatusFooter, 60 * 1000);
             setInterval(updateAllTimelines, 60 * 1000);
 
-            // **CORREÇÃO APLICADA AQUI**
             setTimeout(() => {
                 loadInitialHosts();
                 updateStatusFooter();
