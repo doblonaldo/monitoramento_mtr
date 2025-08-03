@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- Funções de Renderização e UI ---
     function renderHostCard(host) {
-        const cardId = `card-${host.replace(/\./g, '-')}`;
+        const cardId = `card-${host.replace(/[.:]/g, '-')}`;
         if (document.getElementById(cardId)) return;
 
         const card = document.createElement('div');
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.id = cardId;
         card.dataset.host = host;
 
-        const removeButtonHTML = isEditorMode ? '<button class="remove-host-btn" title="Remover host">&times;</button>' : '';
+        const removeButtonHTML = isEditorMode ? `<button class="remove-host-btn" title="Remover host">&times;</button>` : '';
 
         card.innerHTML = `
             <div class="host-header">
@@ -89,10 +89,55 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'line',
             data: {
                 labels: Array(30).fill(''),
-                datasets: [{ data: Array(30).fill(null), borderColor: 'var(--cor-grafico-linha)', borderWidth: 2, pointRadius: 0, tension: 0.4 }]
+                datasets: [{ 
+                    label: 'Latência (ms)',
+                    data: Array(30).fill(null), 
+                    borderColor: 'var(--cor-grafico-linha)', 
+                    borderWidth: 2, 
+                    pointRadius: 0, // Pontos não são mais necessários na simulação
+                    tension: 0.4 
+                }]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true }, x: { display: false } }, plugins: { legend: { display: false } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        ticks: { color: 'var(--cor-texto)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)'}
+                    }, 
+                    x: { 
+                        display: false 
+                    } 
+                }, 
+                plugins: { 
+                    legend: { 
+                        display: false 
+                    },
+                    tooltip: {
+                        enabled: false // Desativa tooltip na simulação
+                    }
+                } 
+            }
         });
+    }
+
+    function parseLatencyFromMtr(mtrLog) {
+        if (!mtrLog || typeof mtrLog !== 'string') return null;
+        
+        const lines = mtrLog.trim().split('\n');
+        if (lines.length < 1) return null;
+
+        const lastHopLine = lines[lines.length - 1];
+        const parts = lastHopLine.trim().split(/\s+/);
+        
+        if (parts.length > 5) {
+            const latency = parseFloat(parts[5]);
+            return isNaN(latency) ? null : latency;
+        }
+        
+        return null;
     }
 
     // --- Funções de API ---
@@ -102,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Falha ao buscar dados do host.');
             const data = await response.json();
             
-            const card = document.getElementById(`card-${host.replace(/\./g, '-')}`);
+            const card = document.getElementById(`card-${host.replace(/[.:]/g, '-')}`);
             if (card) {
                 card.dataset.lastMtr = data.lastMtr;
                 const liveBtn = card.querySelector('.live-btn');
@@ -110,6 +155,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
                 }
                 updateTimeline(card, data.history || [], startDate, endDate);
+
+                // LÓGICA DE ATUALIZAÇÃO DO GRÁFICO (BASE)
+                const currentChart = charts[host];
+                if (currentChart && data.lastMtr) {
+                    const latency = parseLatencyFromMtr(data.lastMtr);
+                    
+                    // Salva a última latência real no dataset do card para a simulação usar
+                    card.dataset.lastAvgLatency = latency !== null ? latency : '';
+                }
             }
         } catch (error) {
             console.error(`Erro ao buscar dados para ${host}:`, error);
@@ -166,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
             startDate = startDatePicker.selectedDates[0];
             endDate = endDatePicker.selectedDates[0];
             if (!startDate || !endDate) {
-                alert("Por favor, selecione uma data de início e fim válidas.");
                 return;
             }
         }
@@ -203,6 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- Lógica do Modal (Apenas em modo de edição) ---
+    // (O código do modal permanece o mesmo)
     const addHostBtn = document.getElementById('add-host-btn');
     if (isEditorMode) {
         const addHostModal = document.getElementById('add-host-modal');
@@ -233,12 +287,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     } else {
-        // Se não estiver no modo de edição, esconde o botão de adicionar
         addHostBtn.style.display = 'none';
     }
 
 
     dashboard.addEventListener('click', async (event) => {
+        // (O código de eventos do dashboard permanece o mesmo)
         const target = event.target;
         const hostCard = target.closest('.host-card');
         if (!hostCard) return;
@@ -271,22 +325,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Simulação de atualização de latência (gráfico)
+    // ATUALIZAÇÃO PRINCIPAL: Simulação visual baseada em dados reais
     setInterval(() => {
-        Object.values(charts).forEach(chart => {
-            chart.data.datasets[0].data.shift();
-            chart.data.datasets[0].data.push(Math.random() * 10);
+        for (const [host, chart] of Object.entries(charts)) {
+            const card = document.getElementById(`card-${host.replace(/[.:]/g, '-')}`);
+            if (!card) continue;
+
+            const lastAvgLatency = parseFloat(card.dataset.lastAvgLatency);
+            let newValue = null;
+
+            if (!isNaN(lastAvgLatency)) {
+                // Gera uma pequena variação de +/- 5% em torno da última latência real
+                const variation = (Math.random() - 0.5) * (lastAvgLatency * 0.1);
+                newValue = Math.max(0, lastAvgLatency + variation); // Garante que não seja negativo
+            }
+
+            const data = chart.data.datasets[0].data;
+            data.shift();
+            data.push(newValue);
             chart.update('quiet');
-        });
-    }, 2000);
+        }
+    }, 2000); // Roda a cada 2 segundos
     
-    // Atualiza o rodapé e os dados a cada minuto
+    // Atualiza os dados reais do backend a cada minuto
     setInterval(() => {
         updateStatusFooter();
         updateAllTimelines();
     }, 60 * 1000);
 
-    // Adiciona um pequeno atraso antes de carregar os dados iniciais
+    // Carregamento inicial
     setTimeout(() => {
         loadInitialHosts();
         updateStatusFooter();

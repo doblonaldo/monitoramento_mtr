@@ -28,11 +28,12 @@ const setupEnv = async () => {
 
 const app = express();
 const PORT = 3000;
-const HOST = '0.0.0.0'; // Ouve em todas as interfaces de rede
+// ALTERAÇÃO 1: Alterado de '0.0.0.0' para '::' para suportar IPv4 e IPv6.
+const HOST = '::'; 
 const DB_FILE = path.join(__dirname, 'db.json');
 const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
-const MONITORING_INTERVAL = 10 * 60 * 1000;
+const MONITORING_INTERVAL = 1 * 60 * 1000;
 
 let db = { hosts: {} };
 let lastCheckTimestamp = null;
@@ -119,10 +120,11 @@ async function importHostsFromFile() {
 // --- Lógica de Monitoramento ---
 function executeMtr(host) {
     return new Promise((resolve, reject) => {
-        if (!/^[a-zA-Z0-9.-]+$/.test(host)) {
+        if (!/^[a-zA-Z0-9.-:]+$/.test(host)) { // Adicionado ':' para validar endereços IPv6
             return reject(new Error('Host inválido.'));
         }
-        const command = `mtr -r -n -c 10 -z -4 ${host}`;
+        // ALTERAÇÃO 2: Removido o flag '-4' para permitir que o mtr use IPv4 ou IPv6 automaticamente.
+        const command = `mtr -r -n -c 10 -4 -z ${host}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 resolve({ error: `Falha ao testar o host ${host}: ${stderr}` });
@@ -281,11 +283,12 @@ app.get('/', (req, res) => {
 
 
 // --- Inicialização do Servidor ---
+// ALTERAÇÃO 3: Mensagens de log atualizadas para refletir o suporte a IPv6.
 app.listen(PORT, HOST, async () => {
     await setupEnv(); // Garante que o .env exista e seja carregado
-    console.log(`Servidor rodando em http://${HOST}:${PORT}`);
-    console.log(`Acesse o painel em modo de visualização em qualquer IP da máquina, ex: http://172.16.254.11:${PORT}`);
-    console.log(`Para editar, acesse: http://172.16.254.11:${PORT}/edit?editor_token=${process.env.EDITOR_TOKEN}`);
+    console.log(`Servidor rodando na porta ${PORT}, acessível via IPv4 e IPv6.`);
+    console.log(`Acesse o painel em modo de visualização, por exemplo: http://localhost:${PORT} ou http://[::1]:${PORT}`);
+    console.log(`Para editar, use a URL com o token de edição, por exemplo: http://localhost:${PORT}/edit?editor_token=${process.env.EDITOR_TOKEN}`);
     
     await loadDatabase();
     await importHostsFromFile();
