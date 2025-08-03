@@ -28,12 +28,11 @@ const setupEnv = async () => {
 
 const app = express();
 const PORT = 3000;
-// ALTERAÇÃO 1: Alterado de '0.0.0.0' para '::' para suportar IPv4 e IPv6.
 const HOST = '::'; 
 const DB_FILE = path.join(__dirname, 'db.json');
 const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
-const MONITORING_INTERVAL = 1 * 60 * 1000;
+const MONITORING_INTERVAL = 10 * 60 * 1000;
 
 let db = { hosts: {} };
 let lastCheckTimestamp = null;
@@ -120,10 +119,11 @@ async function importHostsFromFile() {
 // --- Lógica de Monitoramento ---
 function executeMtr(host) {
     return new Promise((resolve, reject) => {
-        if (!/^[a-zA-Z0-9.-:]+$/.test(host)) { // Adicionado ':' para validar endereços IPv6
-            return reject(new Error('Host inválido.'));
+        // AJUSTE REALIZADO AQUI
+        if (!/^[a-zA-Z0-9.-:]+$/.test(host)) { 
+            // A mensagem de erro agora inclui o host problemático.
+            return reject(new Error(`Host inválido: '${host}'. Contém caracteres não permitidos.`));
         }
-        // ALTERAÇÃO 2: Removido o flag '-4' para permitir que o mtr use IPv4 ou IPv6 automaticamente.
         const command = `mtr -r -n -c 10 -4 -z ${host}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
@@ -145,7 +145,7 @@ function executeMtr(host) {
 }
 
 async function checkHost(host) {
-    const newMtrResult = await executeMtr(host);
+    const newMtrResult = await executeMtr(host).catch(err => ({ error: err.message })); // Captura o erro da Promise
     const hostData = db.hosts[host];
     if (!hostData) return;
 
@@ -283,7 +283,6 @@ app.get('/', (req, res) => {
 
 
 // --- Inicialização do Servidor ---
-// ALTERAÇÃO 3: Mensagens de log atualizadas para refletir o suporte a IPv6.
 app.listen(PORT, HOST, async () => {
     await setupEnv(); // Garante que o .env exista e seja carregado
     console.log(`Servidor rodando na porta ${PORT}, acessível via IPv4 e IPv6.`);
