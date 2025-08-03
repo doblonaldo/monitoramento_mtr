@@ -8,10 +8,27 @@ const { exec } = require('child_process');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
+const crypto = require('crypto');
+
+// --- Carregar Variáveis de Ambiente ---
+const envPath = path.join(__dirname, '.env');
+const setupEnv = async () => {
+    try {
+        await fs.access(envPath);
+        require('dotenv').config();
+    } catch (error) {
+        console.log('[ENV] Arquivo .env não encontrado. Gerando um novo...');
+        const newToken = crypto.randomBytes(16).toString('hex');
+        await fs.writeFile(envPath, `EDITOR_TOKEN=${newToken}\n`);
+        console.log(`[ENV] Novo token de edição gerado e salvo em .env`);
+        require('dotenv').config();
+    }
+};
+
 
 const app = express();
 const PORT = 3000;
-const HOST = '0.0.0.0'; // <-- MUDANÇA AQUI: Ouve em todas as interfaces de rede
+const HOST = '0.0.0.0'; // Ouve em todas as interfaces de rede
 const DB_FILE = path.join(__dirname, 'db.json');
 const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
@@ -22,7 +39,19 @@ let lastCheckTimestamp = null;
 
 app.use(cors());
 app.use(express.json());
+
+// --- Middleware de Autenticação ---
+const requireEditorToken = (req, res, next) => {
+    const token = req.query.editor_token || req.body.editor_token;
+    if (!token || token !== process.env.EDITOR_TOKEN) {
+        return res.status(403).json({ message: 'Acesso negado. Token de edição inválido ou ausente.' });
+    }
+    next();
+};
+
+// Servir arquivos estáticos (CSS, JS do cliente)
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // --- Funções do Banco de Dados ---
 async function loadDatabase() {
@@ -203,11 +232,12 @@ app.get('/api/hosts/:host', (req, res) => {
 
 app.get('/api/status', (req, res) => {
     res.status(200).json({
-        lastCheck: lastCheckTimestamp
+        lastCheck: lastCheckTimestamp,
+        editor_token: req.query.editor_token === process.env.EDITOR_TOKEN ? process.env.EDITOR_TOKEN : undefined
     });
 });
 
-app.post('/api/hosts', async (req, res) => {
+app.post('/api/hosts', requireEditorToken, async (req, res) => {
     const { host } = req.body;
     if (!host) {
         return res.status(400).json({ message: 'O host é obrigatório.' });
@@ -223,7 +253,7 @@ app.post('/api/hosts', async (req, res) => {
     res.status(201).json({ message: `Host ${host} adicionado com sucesso.` });
 });
 
-app.delete('/api/hosts/:host', async (req, res) => {
+app.delete('/api/hosts/:host', requireEditorToken, async (req, res) => {
     const hostToRemove = req.params.host;
     if (!db.hosts[hostToRemove]) {
         return res.status(404).json({ message: 'Host não encontrado.' });
@@ -235,14 +265,29 @@ app.delete('/api/hosts/:host', async (req, res) => {
     res.status(200).json({ message: `Host ${hostToRemove} removido com sucesso.` });
 });
 
+// --- Roteamento da Página ---
+app.get('/edit', (req, res) => {
+    const token = req.query.editor_token;
+    if (!token || token !== process.env.EDITOR_TOKEN) {
+        return res.status(403).send('<h1>EROR 404</h1><p>PAGE NOT FOUND.</p>');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// A rota raiz sempre serve a versão de visualização
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+
 // --- Inicialização do Servidor ---
-app.listen(PORT, HOST, () => { // <-- MUDANÇA AQUI
+app.listen(PORT, HOST, async () => {
+    await setupEnv(); // Garante que o .env exista e seja carregado
     console.log(`Servidor rodando em http://${HOST}:${PORT}`);
-    console.log(`Acesse o painel na sua rede local usando o IP da máquina, ex: http://192.168.1.10:${PORT}`);
+    console.log(`Acesse o painel em modo de visualização em qualquer IP da máquina, ex: http://172.16.254.11:${PORT}`);
+    console.log(`Para editar, acesse: http://172.16.254.11:${PORT}/edit?editor_token=${process.env.EDITOR_TOKEN}`);
     
-    (async () => {
-        await loadDatabase();
-        await importHostsFromFile();
-        startMonitoring();
-    })();
+    await loadDatabase();
+    await importHostsFromFile();
+    startMonitoring();
 });

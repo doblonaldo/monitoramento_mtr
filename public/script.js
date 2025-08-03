@@ -1,7 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const dashboard = document.getElementById('dashboard');
     const charts = {};
-    const API_URL = '/api'; // Usa um caminho relativo que funciona com localhost e IP
+    const API_URL = '/api';
+
+    // --- Lógica de Autenticação no Frontend ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const editorToken = urlParams.get('editor_token');
+    const isEditorMode = !!editorToken;
 
     // --- Inicialização do Calendário ---
     const startDatePicker = flatpickr("#start-date", {
@@ -14,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dateFormat: "Y-m-d H:i",
         time_24hr: true,
     });
-
+    
     // --- Funções de Renderização e UI ---
     function renderHostCard(host) {
         const cardId = `card-${host.replace(/\./g, '-')}`;
@@ -25,12 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
         card.id = cardId;
         card.dataset.host = host;
 
+        const removeButtonHTML = isEditorMode ? '<button class="remove-host-btn" title="Remover host">&times;</button>' : '';
+
         card.innerHTML = `
             <div class="host-header">
                 <span>Destino: ${host}</span>
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <button class="live-btn active" title="Mostrar resultado mais recente">Live</button>
-                    <button class="remove-host-btn" title="Remover host">&times;</button>
+                    ${removeButtonHTML}
                 </div>
             </div>
             <div class="chart-container"><canvas id="chart-${cardId}"></canvas></div>
@@ -135,6 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 statusText.textContent = 'Servidor online. Aguardando o primeiro ciclo de verificação.';
             }
+            if (isEditorMode) {
+                statusText.textContent += ' | Modo de Edição Ativado';
+            }
         } catch (error) {
             statusText.textContent = 'Não foi possível conectar ao servidor de monitoramento.';
         }
@@ -191,33 +201,42 @@ document.addEventListener('DOMContentLoaded', () => {
         await updateStatusFooter();
         setTimeout(() => refreshBtn.classList.remove('loading'), 500);
     });
-
+    
+    // --- Lógica do Modal (Apenas em modo de edição) ---
     const addHostBtn = document.getElementById('add-host-btn');
-    const addHostModal = document.getElementById('add-host-modal');
-    const addHostForm = document.getElementById('add-host-form');
-    const closeModal = () => addHostModal.classList.remove('visible');
-    addHostBtn.addEventListener('click', () => addHostModal.classList.add('visible'));
-    document.getElementById('cancel-add-host').addEventListener('click', closeModal);
-    addHostModal.addEventListener('click', e => e.target === addHostModal && closeModal());
+    if (isEditorMode) {
+        const addHostModal = document.getElementById('add-host-modal');
+        const addHostForm = document.getElementById('add-host-form');
+        const closeModal = () => addHostModal.classList.remove('visible');
+        
+        addHostBtn.addEventListener('click', () => addHostModal.classList.add('visible'));
+        document.getElementById('cancel-add-host').addEventListener('click', closeModal);
+        addHostModal.addEventListener('click', e => e.target === addHostModal && closeModal());
 
-    addHostForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const newHost = document.getElementById('new-host-input').value.trim();
-        if (newHost) {
-            closeModal();
-            try {
-                const response = await fetch(`${API_URL}/hosts`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ host: newHost })
-                });
-                if (!response.ok) throw new Error((await response.json()).message);
-                location.reload();
-            } catch (error) { 
-                alert(error.message);
+        addHostForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const newHost = document.getElementById('new-host-input').value.trim();
+            if (newHost) {
+                closeModal();
+                try {
+                    const response = await fetch(`${API_URL}/hosts?editor_token=${editorToken}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ host: newHost })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message);
+                    location.reload();
+                } catch (error) { 
+                    alert(`Erro: ${error.message}`);
+                }
             }
-        }
-    });
+        });
+    } else {
+        // Se não estiver no modo de edição, esconde o botão de adicionar
+        addHostBtn.style.display = 'none';
+    }
+
 
     dashboard.addEventListener('click', async (event) => {
         const target = event.target;
@@ -237,11 +256,17 @@ document.addEventListener('DOMContentLoaded', () => {
             liveBtn.classList.add('active');
         }
         
-        if (target.classList.contains('remove-host-btn')) {
+        if (target.classList.contains('remove-host-btn') && isEditorMode) {
             const hostToRemove = hostCard.dataset.host;
             if (confirm(`Tem certeza que deseja remover "${hostToRemove}"?`)) {
-                await fetch(`${API_URL}/hosts/${hostToRemove}`, { method: 'DELETE' });
-                hostCard.remove();
+                try {
+                    const response = await fetch(`${API_URL}/hosts/${hostToRemove}?editor_token=${editorToken}`, { method: 'DELETE' });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message);
+                    hostCard.remove();
+                } catch(error) {
+                    alert(`Erro: ${error.message}`);
+                }
             }
         }
     });

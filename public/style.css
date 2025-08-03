@@ -158,6 +158,15 @@ footer {
     .controls {
         flex-direction: column;
     }
+    
+    /* Início da Alteração: Estilo para o novo contêiner */
+    .time-range-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px; /* Mantém o mesmo espaçamento entre os botões */
+    }
+    /* Fim da Alteração */
+    
     .date-range-picker {
         margin-left: 0;
         width: 100%;
