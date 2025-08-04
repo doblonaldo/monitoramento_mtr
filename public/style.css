@@ -3,12 +3,117 @@
     --cor-texto-cabecalho: #ffffff; --cor-sombra: rgba(0, 0, 0, 0.2);
     --cor-terminal-fundo: #1b1b29; --cor-primaria: #4d73ff;
     --cor-mudanca: #ff5722; --cor-grafico-linha: #00e1ff; --cor-remover: #f44336;
+    --sidebar-width: 240px; /* ALTERAÇÃO: Nova variável */
 }
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: var(--cor-fundo); margin: 0; padding: 20px; color: var(--cor-texto);
+    background-color: var(--cor-fundo); margin: 0; color: var(--cor-texto);
     padding-bottom: 50px;
+    /* ALTERAÇÃO: Adiciona padding para a sidebar */
+    padding-left: var(--sidebar-width);
+    transition: padding-left 0.3s ease;
 }
+
+/* INÍCIO DA ALTERAÇÃO: Estilos da Sidebar */
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background-color: var(--cor-card);
+    border-right: 1px solid #3a3c5a;
+    display: flex;
+    flex-direction: column;
+    z-index: 1002;
+    transition: transform 0.3s ease;
+}
+body.sidebar-collapsed #sidebar {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+}
+body.sidebar-collapsed {
+    padding-left: 0;
+}
+body.sidebar-collapsed #sidebar-toggle {
+    left: 10px;
+}
+body.sidebar-collapsed #main-content {
+    margin-left: 0;
+}
+
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    color: var(--cor-texto-cabecalho);
+    border-bottom: 1px solid #3a3c5a;
+}
+.sidebar-header h3 { margin: 0; font-weight: 500; }
+
+#category-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+.category-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    color: var(--cor-texto);
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.category-item:hover { background-color: #3a3c5a; }
+.category-item.active { background-color: var(--cor-primaria); color: white; font-weight: 500; }
+.remove-category-btn {
+    background: none; border: none; color: inherit;
+    font-size: 1.2em; cursor: pointer; opacity: 0.6;
+    transition: opacity 0.2s; display: none; /* Oculto por padrão */
+}
+.category-item:hover .remove-category-btn { display: inline; }
+.category-item .remove-category-btn:hover { opacity: 1; color: var(--cor-remover); }
+
+
+#sidebar-editor-actions {
+    padding: 20px;
+    border-top: 1px solid #3a3c5a;
+    display: none; /* Oculto por padrão, visível em modo editor */
+}
+#add-category-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--cor-primaria);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+}
+
+#sidebar-toggle {
+    position: fixed;
+    top: 15px;
+    left: calc(var(--sidebar-width) + 15px);
+    z-index: 1003;
+    background-color: var(--cor-card);
+    color: var(--cor-texto);
+    border: 1px solid #3a3c5a;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: left 0.3s ease, background-color 0.2s;
+}
+#sidebar-toggle:hover { background-color: #3a3c5a; }
+
+#main-content {
+    padding: 20px;
+    transition: margin-left 0.3s ease;
+}
+/* FIM DA ALTERAÇÃO: Estilos da Sidebar */
+
+
 .main-header {
     display: flex;
     justify-content: center;
@@ -41,7 +146,21 @@ h1 { text-align: center; color: var(--cor-texto-cabecalho); font-weight: 300; ma
 .host-card {
     background-color: var(--cor-card); border-radius: 12px; box-shadow: 0 4px 15px var(--cor-sombra);
     display: flex; flex-direction: column; overflow: hidden; position: relative;
+    /* ALTERAÇÃO: Transição para filtragem suave */
+    transition: opacity 0.3s, transform 0.3s;
 }
+/* ALTERAÇÃO: Estilo para card oculto durante a filtragem */
+.host-card.hidden {
+    opacity: 0;
+    transform: scale(0.9);
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+
 .host-header {
     padding: 15px 20px; border-bottom: 1px solid #3a3c5a; font-size: 1.2em;
     font-weight: 500; color: var(--cor-texto-cabecalho); display: flex;
@@ -119,7 +238,7 @@ h1 { text-align: center; color: var(--cor-texto-cabecalho); font-weight: 300; ma
 
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7);
-    display: flex; align-items: center; justify-content: center; z-index: 1000;
+    display: flex; align-items: center; justify-content: center; z-index: 1100; /* ALTERAÇÃO: Z-index maior que o da sidebar */
     opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
 }
 .modal-overlay.visible { opacity: 1; visibility: visible; }
@@ -128,12 +247,17 @@ h1 { text-align: center; color: var(--cor-texto-cabecalho); font-weight: 300; ma
     max-width: 400px; box-shadow: 0 5px 20px rgba(0,0,0,0.4); transform: scale(0.95);
     transition: transform 0.3s;
 }
+.modal-overlay.visible .modal-content {
+    transform: scale(1);
+}
 .modal-content h2 { margin-top: 0; color: var(--cor-texto-cabecalho); font-weight: 500; }
-.modal-content input {
-    width: 100%; padding: 12px; margin: 15px 0; border-radius: 6px; border: 1px solid #3a3c5a;
+.modal-content input, .modal-content select { /* ALTERAÇÃO: Aplica estilo ao select */
+    width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #3a3c5a;
     background-color: var(--cor-terminal-fundo); color: var(--cor-texto); font-size: 1em; box-sizing: border-box;
 }
-.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.modal-content label { margin-top: 10px; display: block; }
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
 .modal-actions button {
     padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;
     font-weight: 500; transition: background-color 0.2s;
@@ -145,38 +269,30 @@ footer {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background-color: var(--cor-terminal-fundo); color: var(--cor-texto);
     text-align: center; padding: 8px 0; font-size: 0.9em;
-    border-top: 1px solid #3a3c5a; z-index: 100;
+    border-top: 1px solid #3a3c5a; z-index: 1000;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     body {
-        padding: 10px;
+        padding-left: 0; /* No mobile, sidebar não empurra o conteúdo */
     }
-    h1 {
-        font-size: 1.2em;
+    #sidebar {
+        transform: translateX(calc(-1 * var(--sidebar-width))); /* Sidebar começa recolhida */
     }
-    .controls {
-        flex-direction: column;
+    body:not(.sidebar-collapsed) #sidebar {
+         transform: translateX(0); /* Mostra a sidebar quando o body não tem a classe */
+    }
+    #sidebar-toggle {
+        left: 10px;
+    }
+    body:not(.sidebar-collapsed) #sidebar-toggle {
+        left: calc(var(--sidebar-width) + 15px);
     }
     
-    /* Início da Alteração: Estilo para o novo contêiner */
-    .time-range-controls {
-        display: flex;
-        justify-content: center;
-        gap: 10px; /* Mantém o mesmo espaçamento entre os botões */
-    }
-    /* Fim da Alteração */
-    
-    .date-range-picker {
-        margin-left: 0;
-        width: 100%;
-        flex-direction: column;
-    }
-    .date-range-picker input, .date-range-picker button {
-        width: 90%;
-        box-sizing: border-box;
-    }
-    #dashboard {
-        grid-template-columns: 1fr;
-    }
+    h1 { font-size: 1.2em; }
+    .controls { flex-direction: column; }
+    .time-range-controls { display: flex; justify-content: center; gap: 10px; }
+    .date-range-picker { margin-left: 0; width: 100%; flex-direction: column; }
+    .date-range-picker input, .date-range-picker button { width: 90%; box-sizing: border-box; }
+    #dashboard { grid-template-columns: 1fr; }
 }
