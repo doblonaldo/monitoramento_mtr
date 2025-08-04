@@ -11,23 +11,35 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="main-header">
-        <h1>Painel de Monitoramento de Rota</h1>
-    </div>
-
-    <div class="controls">
-        <div class="time-range-controls">
-            <button class="control-btn active" data-range="3">3h</button>
-            <button class="control-btn" data-range="6">6h</button>
+    <button id="sidebar-toggle" title="Alternar menu de categorias">☰</button>
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <h3>Categorias</h3>
         </div>
-        <div class="date-range-picker">
-            <input type="text" id="start-date" placeholder="Data de Início">
-            <input type="text" id="end-date" placeholder="Data de Fim">
-            <button id="filter-btn">Filtrar</button>
+        <nav id="category-list"></nav>
+        <div id="sidebar-editor-actions">
+            <button id="add-category-btn">+ Nova Categoria</button>
         </div>
-    </div>
+    </aside>
+    <div id="main-content">
+        <div class="main-header">
+            <h1>Painel de Monitoramento de Rota</h1>
+        </div>
 
-    <div id="dashboard"></div>
+        <div class="controls">
+            <div class="time-range-controls">
+                <button class="control-btn active" data-range="3">3h</button>
+                <button class="control-btn" data-range="6">6h</button>
+            </div>
+            <div class="date-range-picker">
+                <input type="text" id="start-date" placeholder="Data de Início">
+                <input type="text" id="end-date" placeholder="Data de Fim">
+                <button id="filter-btn">Filtrar</button>
+            </div>
+        </div>
+
+        <div id="dashboard"></div>
+    </div>
 
     <div class="floating-actions">
         <button id="refresh-btn" class="floating-btn" title="Atualizar dados">
@@ -42,14 +54,29 @@
             <form id="add-host-form">
                 <input type="text" id="new-host-title-input" placeholder="Nome do Destino (Opcional)">
                 <input type="text" id="new-host-input" placeholder="Digite o IP ou domínio do destino" required>
+                <label for="new-host-category-select">Categoria</label>
+                <select id="new-host-category-select">
+                    </select>
                 <div class="modal-actions">
-                    <button type="button" id="cancel-add-host">Cancelar</button>
+                    <button type="button" class="cancel-btn">Cancelar</button>
                     <button type="submit">Adicionar</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <div id="add-category-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Adicionar Nova Categoria</h2>
+            <form id="add-category-form">
+                <input type="text" id="new-category-name-input" placeholder="Nome da nova categoria" required>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn">Cancelar</button>
+                    <button type="submit">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <footer>
         <span id="status-text">Verificando status do servidor...</span>
     </footer>

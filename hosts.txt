@@ -1,4 +1,1 @@
-title: Gateway da Rede, destino: 192.168.1.1
-title: Servidor DNS Cloudflare, destino: 1.1.1.1
-title: Servidor DNS Google, destino: 8.8.8.8
-bb.com.br
+title: Servidor DNS Primário, destino: 8.8.8.8, category: DNS Global
