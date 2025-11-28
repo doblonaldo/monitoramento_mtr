@@ -192,3 +192,4 @@ destino: 170.144.52.2
 destino: zoom.us
 destino: 51.123.128.14
 destino: teams.microsoft.com
+title: Google, destino: 8.8.8.8, category: Jogos
