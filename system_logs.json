@@ -1,5 +1,83 @@
 [
   {
+    "timestamp": "2025-11-28T18:20:10.547Z",
+    "username": "admin",
+    "action": "Remover Usuário",
+    "details": "Removeu usuário: fernando@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T18:19:08.819Z",
+    "username": "fernando@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:18:52.245Z",
+    "username": "fernando@brphonia.com.br",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T18:18:42.347Z",
+    "username": "admin",
+    "action": "Atualizar Usuário",
+    "details": "Atualizou usuário: fernando@brphonia.com.br. Mudanças: função para admin"
+  },
+  {
+    "timestamp": "2025-11-28T18:18:05.104Z",
+    "username": "fernando@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:17:48.620Z",
+    "username": "fernando@brphonia.com.br",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T18:17:40.466Z",
+    "username": "admin",
+    "action": "Atualizar Usuário",
+    "details": "Atualizou usuário: fernando@brphonia.com.br. Mudanças: função para editor"
+  },
+  {
+    "timestamp": "2025-11-28T18:17:31.146Z",
+    "username": "fernando@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:16:03.265Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: fernando@brphonia.com.br (viewer)"
+  },
+  {
+    "timestamp": "2025-11-28T18:16:00.408Z",
+    "username": "admin",
+    "action": "Remover Usuário",
+    "details": "Removeu usuário: fernando@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T18:15:51.574Z",
+    "username": "admin",
+    "action": "Adicionar Categoria",
+    "details": "Adicionou categoria: Teste"
+  },
+  {
+    "timestamp": "2025-11-28T18:15:45.263Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:15:35.801Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
     "timestamp": "2025-11-28T18:04:50.687Z",
     "username": "admin",
     "action": "Convidar Usuário",
