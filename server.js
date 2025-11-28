@@ -9,6 +9,7 @@ const cors = require('cors');
 const { exec } = require('child_process');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit'); // Security: Rate Limiting
 const crypto = require('crypto');
 const express = require('express');
 
@@ -67,9 +68,25 @@ try {
     console.error('[ENV] Erro ao carregar .env:', error);
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'seu_segredo_super_secreto';
+
+
+if (!process.env.JWT_SECRET) {
+    console.error('[FATAL] JWT_SECRET não definido no arquivo .env. O servidor não pode iniciar de forma segura.');
+    process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 const EDITOR_TOKEN = process.env.EDITOR_TOKEN;
-const LOGIN_ICON = process.env.LOGIN_ICON; // New config
+const LOGIN_ICON = process.env.LOGIN_ICON;
+
+// --- Rate Limiter Configuration ---
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 requests per windowMs
+    message: { message: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 // --- Configuração do Banco de Dados (JSON) ---
 let db = {
@@ -372,9 +389,8 @@ function startMonitoring() {
     }, MONITORING_INTERVAL);
 }
 
-// --- Rotas da API ---
-
-app.post('/api/login', async (req, res) => {
+// --- Rotas da API// 1. Login
+app.post('/api/login', authLimiter, async (req, res) => {
     const { username, password } = req.body;
     const user = db.users.find(u => u.username === username);
     if (!user) {
@@ -464,7 +480,7 @@ app.post('/api/users/invite', authenticateToken, authorizeRole(['admin']), async
 });
 
 // 2. Definir Senha (Primeiro Acesso)
-app.post('/api/auth/setup-password', async (req, res) => {
+app.post('/api/auth/setup-password', authLimiter, async (req, res) => {
     const { token, password } = req.body;
     const user = db.users.find(u => u.inviteToken === token && u.inviteTokenExpires > Date.now());
 
@@ -510,7 +526,7 @@ app.post('/api/users/:username/reset-link', authenticateToken, authorizeRole(['a
 });
 
 // 4. Redefinir Senha (Com Token)
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     const { token, password } = req.body;
     const user = db.users.find(u => u.resetToken === token && u.resetTokenExpires > Date.now());
 
