@@ -50,6 +50,7 @@ destino: 172.217.29.227
 destino: 23.4.90.222
 destino: www.netflix.com
 destino: google.com.br
+destino: www.youtube.com
 destino: www.xvideos.com
 destino: 149.154.175.60
 destino: 95.161.64.1
@@ -112,6 +113,7 @@ destino: 156.154.144.121
 destino: 157.240.12.13
 destino: uol.com.br
 destino: 31.13.85.51
+destino: youtube.com
 destino: primevideo.com
 destino: pinterest.com
 destino: psn.com.br
@@ -126,6 +128,7 @@ destino: www.tumblr.com
 destino: twitter.com
 destino: vimeo.com
 destino: xbox.com.br
+destino: youtube.com.br
 destino: music.youtube.com
 destino: shopee.com.br
 destino: terra.com
@@ -188,6 +191,3 @@ destino: 170.144.52.2
 destino: zoom.us
 destino: 51.123.128.14
 destino: teams.microsoft.com
-title: MK, destino: mk.brphonia.com.br
-title: MK, destino: mk.brphonia.com.br
-destino: www.youtube.com

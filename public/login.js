@@ -2,30 +2,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const errorMsg = document.getElementById('error-msg'); // Re-added errorMsg for consistency and the final catch block
-    const loginForm = document.getElementById('login-form');
-    const iconContainer = document.getElementById('login-icon-container');
-
-    // Fetch public config for icon
-    try {
-        const res = await fetch('/api/public-config');
-        if (res.ok) {
-            const config = await res.json();
-            if (config.loginIcon) {
-                const img = document.createElement('img');
-                img.src = config.loginIcon;
-                img.alt = 'Logo';
-                img.className = 'login-icon';
-                // Clear existing icon if any, to prevent duplicates on multiple submissions
-                while (iconContainer.firstChild) {
-                    iconContainer.removeChild(iconContainer.firstChild);
-                }
-                iconContainer.appendChild(img);
-            }
-        }
-    } catch (e) {
-        console.error('Erro ao carregar configuração:', e);
-    }
+    const errorMsg = document.getElementById('error-msg');
 
     try {
         const res = await fetch('/api/login', {
@@ -40,14 +17,14 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             localStorage.setItem('accessToken', data.accessToken);
             localStorage.setItem('userRole', data.role);
             localStorage.setItem('username', data.username);
-            window.location.href = '/index.html'; // Changed from '/' to '/index.html' as per new code
+            window.location.href = '/index.html';
         } else {
-            errorMsg.textContent = data.message || 'Login falhou'; // Changed alert to errorMsg
+            errorMsg.textContent = data.message || 'Login falhou';
             errorMsg.style.display = 'block';
         }
     } catch (error) {
         console.error('Erro no login:', error);
-        errorMsg.textContent = 'Erro ao conectar ao servidor.'; // Changed alert to errorMsg
+        errorMsg.textContent = 'Erro ao conectar ao servidor.';
         errorMsg.style.display = 'block';
     }
 });

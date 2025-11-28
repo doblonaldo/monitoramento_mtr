@@ -642,7 +642,33 @@ app.get('/api/status', (req, res) => {
 });
 
 app.get('/api/public-config', (req, res) => {
-    res.json({ loginIcon: LOGIN_ICON });
+    // If LOGIN_ICON is set, return the internal API URL that handles serving it
+    const iconUrl = LOGIN_ICON ? '/api/logo' : null;
+    res.json({ loginIcon: iconUrl });
+});
+
+app.get('/api/logo', (req, res) => {
+    if (!LOGIN_ICON) return res.status(404).send('Logo not configured');
+
+    // If it's an external URL, redirect
+    if (LOGIN_ICON.startsWith('http://') || LOGIN_ICON.startsWith('https://')) {
+        return res.redirect(LOGIN_ICON);
+    }
+
+    // If it's a local file, try to resolve and serve it
+    let iconPath = LOGIN_ICON;
+
+    // Resolve relative paths relative to the project root (where server.js is)
+    if (!path.isAbsolute(iconPath)) {
+        iconPath = path.join(__dirname, iconPath);
+    }
+
+    if (fs.existsSync(iconPath)) {
+        res.sendFile(iconPath);
+    } else {
+        console.error(`[Logo] File not found: ${iconPath}`);
+        res.status(404).send('Logo file not found');
+    }
 });
 
 app.post('/api/hosts', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {

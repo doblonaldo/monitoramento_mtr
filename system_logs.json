@@ -1,5 +1,41 @@
 [
   {
+    "timestamp": "2025-11-28T18:04:50.687Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: fernando@brphonia.com.br (editor)"
+  },
+  {
+    "timestamp": "2025-11-28T18:04:38.909Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:04:32.788Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T18:04:30.600Z",
+    "username": "admin",
+    "action": "Atualizar Usuário",
+    "details": "Atualizou usuário: admin. Mudanças: senha"
+  },
+  {
+    "timestamp": "2025-11-28T18:04:22.721Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:48:39.169Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
     "timestamp": "2025-11-28T17:45:33.057Z",
     "username": "admin",
     "action": "Adicionar Host",
