@@ -1,163 +1,194 @@
-title: Banco do Brasil (Página Inicial) {104.18.28.245}, destino: 104.18.28.245, category: Bancos
-title: Banco do Brasil (Página Inicial) {bb.com.br}, destino: bb.com.br, category: Bancos
-title: Banco do Brasil (Login) {201.55.248.48}, destino: 201.55.248.48, category: Bancos
-title: Banco do Brasil (Login) {www2.bb.com.br}, destino: www2.bb.com.br, category: Bancos
-title: Banrisul (Página Inicial) {201.55.248.10}, destino: 201.55.248.10, category: Bancos
-title: Banrisul (Página Inicial) {banrisul.com.br}, destino: banrisul.com.br, category: Bancos
-title: Banrisul (Login) {ww8.banrisul.com.br}, destino: ww8.banrisul.com.br, category: Bancos
-title: Caixa (Página Inicial) {200.201.171.223}, destino: 200.201.171.223, category: Bancos
-title: Caixa (Página Inicial) {caixa.gov.br}, destino: caixa.gov.br, category: Bancos
-title: Caixa (Login) {179.191.169.58}, destino: 179.191.169.58, category: Bancos
-title: Caixa (Login) {internetbanking.caixa.gov.br}, destino: internetbanking.caixa.gov.br, category: Bancos
-title: Cresol (Página Inicial) {172.67.26.147}, destino: 172.67.26.147, category: Bancos
-title: Cresol (Página Inicial) {cresol.com.br}, destino: cresol.com.br, category: Bancos
-title: Cresol (Login) {172.67.196.7}, destino: 172.67.196.7, category: Bancos
-title: Cresol (Login) {internetbanking.confesol.com.br}, destino: internetbanking.confesol.com.br, category: Bancos
-title: Sicoob (Página Inicial) {177.53.253.59}, destino: 177.53.253.59, category: Bancos
-title: Sicoob (Página Inicial) {sicoob.com.br}, destino: sicoob.com.br, category: Bancos
-title: PayPal Anycast {192.229.210.155}, destino: 192.229.210.155, category: Bancos
-title: Nubank {13.227.120.119}, destino: 13.227.120.119, category: Bancos
-title: Free Fire 1 {143.92.126.71}, destino: 143.92.126.71, category: Jogos
-title: Free Fire 2 {143.92.126.133}, destino: 143.92.126.133, category: Jogos
-title: Free Fire 3 {128.14.221.18}, destino: 128.14.221.18, category: Jogos
-title: Free Fire 4 {143.92.125.169}, destino: 143.92.125.169, category: Jogos
-title: Free Fire 5 {143.92.126.164}, destino: 143.92.126.164, category: Jogos
-title: Free Fire 6 {169.57.197.82}, destino: 169.57.197.82, category: Jogos
-title: Free Fire 7 {143.92.126.145}, destino: 143.92.126.145, category: Jogos
-title: Free Fire 8 {169.57.181.198}, destino: 169.57.181.198, category: Jogos
-title: Free Fire 9 {169.57.197.42}, destino: 169.57.197.42, category: Jogos
-title: Free Fire 10 {169.57.197.161}, destino: 169.57.197.161, category: Jogos
-title: Free Fire 11 {104.124.97.8}, destino: 104.124.97.8, category: Jogos
-title: Free Fire 12 {104.124.97.33}, destino: 104.124.97.33, category: Jogos
-title: Free Fire 13 {169.57.197.100}, destino: 169.57.197.100, category: Jogos
-title: Riot (League of Legends) {104.160.143.97}, destino: 104.160.143.97, category: Jogos
-title: Riot (Wild Rift) {status.riotgames.com}, destino: status.riotgames.com, category: Jogos
-title: PUBG 1 {49.51.136.156}, destino: 49.51.136.156, category: Jogos
-title: PUBG 2 {203.205.179.145}, destino: 203.205.179.145, category: Jogos
-title: PUBG 3 {52.94.7.70}, destino: 52.94.7.70, category: Jogos
-title: Call of Duty 1 {209.197.3.24}, destino: 209.197.3.24, category: Jogos
-title: Call of Duty 2 {23.42.246.119}, destino: 23.42.246.119, category: Jogos
-title: Call of Duty 3 {157.240.216.14}, destino: 157.240.216.14, category: Jogos
-title: Call of Duty 4 {92.122.173.141}, destino: 92.122.173.141, category: Jogos
-title: PlayStation Network {status.playstation.com}, destino: status.playstation.com, category: Jogos
-title: GamersClub {teste.gamersclub.com.br}, destino: teste.gamersclub.com.br, category: Jogos
-title: Garena 1 {143.92.125.203}, destino: 143.92.125.203, category: Jogos
-title: Garena 2 {143.92.126.19}, destino: 143.92.126.19, category: Jogos
-title: Steam SP {209.197.25.1}, destino: 209.197.25.1, category: Jogos
-title: Valve (CS:GO) {139.162.30.91}, destino: 139.162.30.91, category: Jogos
-title: Xbox Live {13.107.42.15}, destino: 13.107.42.15, category: Jogos
-title: Battle.net {battle.net}, destino: battle.net, category: Jogos
-title: EA Games {ea.com}, destino: ea.com, category: Jogos
-title: World of Warcraft 1 {66.40.177.139}, destino: 66.40.177.139, category: Jogos
-title: World of Warcraft 2 (Azralon) {66.40.177.164}, destino: 66.40.177.164, category: Jogos
-title: World of Warcraft 3 (Azralon) {66.40.179.40}, destino: 66.40.179.40, category: Jogos
-title: CS:GO {195.85.59.161}, destino: 195.85.59.161, category: Jogos
-title: Dropbox (SP - AWS) {52.84.133.186}, destino: 52.84.133.186, category: Compartilhamento de Arquivos
-title: Dropbox (RJ - AWS) {13.33.132.56}, destino: 13.33.132.56, category: Compartilhamento de Arquivos
-title: OneDrive (RJ - Akamai) {23.65.131.136}, destino: 23.65.131.136, category: Compartilhamento de Arquivos
-title: OneDrive (SP - Akamai) {23.10.48.107}, destino: 23.10.48.107, category: Compartilhamento de Arquivos
-title: Gmail (SP) {142.250.218.65}, destino: 142.250.218.65, category: Emails
-title: Gmail (NY) {142.250.65.225}, destino: 142.250.65.225, category: Emails
-title: Outlook (Anycast) {13.107.6.152}, destino: 13.107.6.152, category: Emails
-title: Outlook (CTA - Akamai) {2.16.197.104}, destino: 2.16.197.104, category: Emails
-title: Yahoo (USA - Anycast) {66.218.84.40}, destino: 66.218.84.40, category: Emails
-title: Detran RS {200.198.128.227}, destino: 200.198.128.227, category: Governo
-title: Detran RS {detran.rs.gov.br}, destino: detran.rs.gov.br, category: Governo
-title: Acesso Gov.br {sso.acesso.gov.br}, destino: sso.acesso.gov.br, category: Governo
-title: e-CAC Receita Federal {cav.receita.fazenda.gov.br}, destino: cav.receita.fazenda.gov.br, category: Governo
-title: SEFAZ RS {sefaz.rs.gov.br}, destino: sefaz.rs.gov.br, category: Governo
-title: NFE SEFAZ RS {nfe.sefazrs.rs.gov.br}, destino: nfe.sefazrs.rs.gov.br, category: Governo
-title: WhatsApp (SP - Claro) {187.2.74.162}, destino: 187.2.74.162, category: Mensageiros
-title: WhatsApp (SP - Telefonica) {186.214.37.98}, destino: 186.214.37.98, category: Mensageiros
-title: WhatsApp (RJ - Claro) {189.123.31.33}, destino: 189.123.31.33, category: Mensageiros
-title: WhatsApp (RJ - Telefonica) {191.32.236.161}, destino: 191.32.236.161, category: Mensageiros
-title: WhatsApp (Web) {web.whatsapp.com}, destino: web.whatsapp.com, category: Mensageiros
-title: WhatsApp (IP) {31.13.85.51}, destino: 31.13.85.51, category: Mensageiros
-title: Snapchat (SP - AWS) {13.227.99.80}, destino: 13.227.99.80, category: Mensageiros
-title: Snapchat (FL - AWS) {108.139.91.241}, destino: 108.139.91.241, category: Mensageiros
-title: Signal (NY - Google) {142.250.81.243}, destino: 142.250.81.243, category: Mensageiros
-title: Signal (West US - Azure) {20.66.40.69}, destino: 20.66.40.69, category: Mensageiros
-title: Discord (FL - AWS) {108.139.119.67}, destino: 108.139.119.67, category: Mensageiros
-title: Discord {discord.com}, destino: discord.com, category: Mensageiros
-title: Meta (SP) {31.13.85.2}, destino: 31.13.85.2, category: Mensageiros
-title: Meta (RJ) {31.13.90.9}, destino: 31.13.90.9, category: Mensageiros
-title: Telegram 1 {149.154.175.60}, destino: 149.154.175.60, category: Mensageiros
-title: Telegram 2 {95.161.64.1}, destino: 95.161.64.1, category: Mensageiros
-title: Telegram {www.telegram.com}, destino: www.telegram.com, category: Mensageiros
-title: Facebook (SP - Meta) {31.13.85.4}, destino: 31.13.85.4, category: Redes Sociais
-title: Facebook (RJ - Meta) {31.13.90.16}, destino: 31.13.90.16, category: Redes Sociais
-title: Facebook {www.facebook.com}, destino: www.facebook.com, category: Redes Sociais
-title: Instagram (SP - Claro) {200.189.87.32}, destino: 200.189.87.32, category: Redes Sociais
-title: Instagram (RJ - Claro) {201.17.39.96}, destino: 201.17.39.96, category: Redes Sociais
-title: Instagram {www.instagram.com}, destino: www.instagram.com, category: Redes Sociais
-title: Pinterest (SP - AWS) {108.139.166.17}, destino: 108.139.166.17, category: Redes Sociais
-title: Pinterest (CTA - Akamai) {2.23.148.203}, destino: 2.23.148.203, category: Redes Sociais
-title: Reddit (SP - Fastly) {199.232.113.140}, destino: 199.232.113.140, category: Redes Sociais
-title: Reddit (CTA - Fastly) {151.101.253.140}, destino: 151.101.253.140, category: Redes Sociais
-title: Reddit {www.reddit.com}, destino: www.reddit.com, category: Redes Sociais
-title: TikTok (SP - Google) {34.95.203.34}, destino: 34.95.203.34, category: Redes Sociais
-title: TikTok (SP - Akamai) {18.67.136.41}, destino: 18.67.136.41, category: Redes Sociais
-title: TikTok (CTA - Akamai) {2.16.197.106}, destino: 2.16.197.106, category: Redes Sociais
-title: TikTok (RJ - AWS) {13.33.123.4}, destino: 13.33.123.4, category: Redes Sociais
-title: TikTok {www.tiktok.com}, destino: www.tiktok.com, category: Redes Sociais
-title: Twitter (SP - AWS) {13.227.86.251}, destino: 13.227.86.251, category: Redes Sociais
-title: Twitter (CTA - Akamai) {2.23.149.179}, destino: 2.23.149.179, category: Redes Sociais
-title: Twitter (CTA - Fastly) {151.101.252.157}, destino: 151.101.252.157, category: Redes Sociais
-title: Twitter {twitter.com}, destino: twitter.com, category: Redes Sociais
-title: Linkedin {www.linkedin.com}, destino: www.linkedin.com, category: Redes Sociais
-title: GloboPlay 1 {52.84.175.209}, destino: 52.84.175.209, category: Streaming
-title: GloboPlay 2 {13.227.120.95}, destino: 13.227.120.95, category: Streaming
-title: GloboPlay 3 {151.101.2.133}, destino: 151.101.2.133, category: Streaming
-title: GloboPlay 4 {186.192.80.20}, destino: 186.192.80.20, category: Streaming
-title: GloboPlay 5 {131.0.25.21}, destino: 131.0.25.21, category: Streaming
-title: GloboPlay Recife 1 {168.196.119.194}, destino: 168.196.119.194, category: Streaming
-title: GloboPlay Recife 2 {168.196.119.198}, destino: 168.196.119.198, category: Streaming
-title: GloboPlay {globoplay.globo.com}, destino: globoplay.globo.com, category: Streaming
-title: Spotify 1 {151.101.94.248}, destino: 151.101.94.248, category: Streaming
-title: Spotify 2 {172.217.29.227}, destino: 172.217.29.227, category: Streaming
-title: Spotify 3 {23.4.90.222}, destino: 23.4.90.222, category: Streaming
-title: Spotify {spotify.com}, destino: spotify.com, category: Streaming
-title: Netflix {www.netflix.com}, destino: www.netflix.com, category: Streaming
-title: Netflix (CDN) {138.219.84.195}, destino: 138.219.84.195, category: Streaming
-title: Netflix (SP - AWS) {13.227.115.52}, destino: 13.227.115.52, category: Streaming
-title: Netflix (SP - Akamai) {2.16.217.194}, destino: 2.16.217.194, category: Streaming
-title: Netflix (CTA - Akamai) {2.23.149.157}, destino: 2.23.149.157, category: Streaming
-title: YouTube {www.youtube.com}, destino: www.youtube.com, category: Streaming
-title: YouTube (CDN) {138.219.84.236}, destino: 138.219.84.236, category: Streaming
-title: YouTube (CTA - Claro) {189.4.5.204}, destino: 189.4.5.204, category: Streaming
-title: YouTube Music {music.youtube.com}, destino: music.youtube.com, category: Streaming
-title: Deezer {www.deezer.com}, destino: www.deezer.com, category: Streaming
-title: Amazon Prime Video {primevideo.com}, destino: primevideo.com, category: Streaming
-title: Amazon CDN (Edgio) {69.164.45.61}, destino: 69.164.45.61, category: Streaming
-title: Amazon CDN (RJ) {99.84.23.109}, destino: 99.84.23.109, category: Streaming
-title: Amazon CDN (SP) {13.227.86.188}, destino: 13.227.86.188, category: Streaming
-title: Disney CDN (RJ - Akamai) {23.65.129.49}, destino: 23.65.129.49, category: Streaming
-title: Disney CDN (RJ - Fastly) {151.101.177.190}, destino: 151.101.177.190, category: Streaming
-title: HBO Max {108.158.147.65}, destino: 108.158.147.65, category: Streaming
-title: iTunes {17.253.200.1}, destino: 17.253.200.1, category: Streaming
-title: SoundCloud {soundcloud.com}, destino: soundcloud.com, category: Streaming
-title: Vimeo {vimeo.com}, destino: vimeo.com, category: Streaming
-title: Twitch {twitch.tv}, destino: twitch.tv, category: Streaming
-title: Twitch (IP) {151.101.194.167}, destino: 151.101.194.167, category: Streaming
-title: Twitch (SP - AWS) {13.227.86.228}, destino: 13.227.86.228, category: Streaming
-title: Google Meet {172.217.28.142}, destino: 172.217.28.142, category: Streaming
-title: Google Meet {meet.google.com}, destino: meet.google.com, category: Streaming
-title: Zoom {170.144.52.2}, destino: 170.144.52.2, category: Streaming
-title: Zoom {zoom.us}, destino: zoom.us, category: Streaming
-title: Microsoft Teams {51.123.128.14}, destino: 51.123.128.14, category: Streaming
-title: Microsoft Teams {teams.microsoft.com}, destino: teams.microsoft.com, category: Streaming
-title: Google {google.com.br}, destino: google.com.br, category: Sites e Portais
-title: Terra {www.terra.com.br}, destino: www.terra.com.br, category: Sites e Portais
-title: UOL {www.uol.com.br}, destino: www.uol.com.br, category: Sites e Portais
-title: G1 Globo {g1.globo.com}, destino: g1.globo.com, category: Sites e Portais
-title: Xvideos {www.xvideos.com}, destino: www.xvideos.com, category: Sites e Portais
-title: Mercado Livre {mercadolivre.com.br}, destino: mercadolivre.com.br, category: E-commerce
-title: Shopee {shopee.com.br}, destino: shopee.com.br, category: E-commerce
-title: Amazon {18.164.78.91}, destino: 18.164.78.91, category: E-commerce
-title: Cloudflare DNS {1.1.1.1}, destino: 1.1.1.1, category: Utilitários e PTTs
-title: Google Cloud {cloud.google.com}, destino: cloud.google.com, category: Utilitários e PTTs
-title: Google Play {play.google.com}, destino: play.google.com, category: Utilitários e PTTs
-title: PTT-SP Century {187.16.222.134}, destino: 187.16.222.134, category: Utilitários e PTTs
-title: PTT-SP EletroNet {187.16.220.80}, destino: 187.16.220.80, category: Utilitários e PTTs
-title: PTT-SP Matrix S.A {187.16.216.48}, destino: 187.16.216.48, category: Utilitários e PTTs
-title: PTT-SP SAMMCCR {187.16.218.98}, destino: 187.16.218.98, category: Utilitários e PTTs
+destino: google.com\n1.1.1.1
+destino: 200.198.128.227
+destino: detran.rs.gov.br
+destino: 142.250.218.65
+destino: 142.250.65.225
+destino: 13.107.6.152
+destino: 2.16.197.104
+destino: 66.218.84.40
+destino: 143.92.126.71
+destino: 143.92.126.133
+destino: 143.92.125.169
+destino: 143.92.126.164
+destino: 143.92.126.145
+destino: 49.51.136.156
+destino: 52.94.7.70
+destino: 52.67.255.254
+destino: 143.92.125.203
+destino: 143.92.126.19
+destino: 66.40.177.139
+destino: 66.40.177.164
+destino: 66.40.179.40
+destino: 195.85.59.161
+destino: 104.18.28.245
+destino: bb.com.br
+destino: 201.55.248.48
+destino: www2.bb.com.br
+destino: 201.55.248.10
+destino: banrisul.com.br
+destino: ww8.banrisul.com.br
+destino: 200.201.171.223
+destino: caixa.gov.br
+destino: 179.191.169.58
+destino: internetbanking.caixa.gov.br
+destino: 172.67.26.147
+destino: cresol.com.br
+destino: 172.67.196.7
+destino: internetbanking.confesol.com.br
+destino: 177.53.253.59
+destino: sicoob.com.br
+destino: 192.229.210.155
+destino: 52.84.175.209
+destino: 13.227.120.95
+destino: 151.101.2.133
+destino: 186.192.80.20
+destino: 131.0.25.21
+destino: 168.196.119.194
+destino: 168.196.119.198
+destino: 13.227.120.119
+destino: 151.101.94.248
+destino: 172.217.29.227
+destino: 23.4.90.222
+destino: www.netflix.com
+destino: google.com.br
+destino: www.youtube.com
+destino: www.xvideos.com
+destino: 149.154.175.60
+destino: 95.161.64.1
+destino: www.terra.com.br
+destino: www.uol.com.br
+destino: www.instagram.com
+destino: www.facebook.com
+destino: www.linkedin.com
+destino: www.reddit.com
+destino: www.tiktok.com
+destino: web.whatsapp.com
+destino: 31.13.85.4
+destino: 31.13.90.16
+destino: 200.189.87.32
+destino: 201.17.39.96
+destino: 108.139.166.17
+destino: 2.23.148.203
+destino: 199.232.113.140
+destino: 151.101.253.140
+destino: 34.95.203.34
+destino: 18.67.136.41
+destino: 2.16.197.106
+destino: 13.33.123.4
+destino: 13.227.86.251
+destino: 2.23.149.179
+destino: 151.101.252.157
+destino: 52.84.133.186
+destino: 13.33.132.56
+destino: 23.65.131.136
+destino: 23.10.48.107
+destino: 18.164.78.91
+destino: battle.net
+destino: callofduty.com
+destino: 138.219.84.160
+destino: 138.219.84.195
+destino: 138.219.84.236
+destino: cloud.google.com
+destino: 1.1.1.1
+destino: csgo.com
+destino: www.deezer.com
+destino: discord.com
+destino: 170.80.52.58
+destino: 127.0.0.1
+destino: ea.com
+destino: store.epicgames.com
+destino: facebook.com.br
+destino: ff.garena.com
+destino: g1.globo.com
+destino: 35.215.242.119
+destino: globoplay.globo.com
+destino: play.google.com
+destino: plus.google.com
+destino: 108.158.147.65
+destino: instagram.com.br
+destino: 17.253.200.1
+destino: linkedin.com.br
+destino: meet.google.com
+destino: mercadolivre.com.br
+destino: 156.154.144.121
+destino: 157.240.12.13
+destino: uol.com.br
+destino: 31.13.85.51
+destino: youtube.com
+destino: primevideo.com
+destino: pinterest.com
+destino: psn.com.br
+destino: snapchat.com
+destino: soundcloud.com
+destino: spotify.com
+destino: store.steampowered.com
+destino: telegram.com
+destino: tiktok.com
+destino: tinder.com
+destino: www.tumblr.com
+destino: twitter.com
+destino: vimeo.com
+destino: xbox.com.br
+destino: youtube.com.br
+destino: music.youtube.com
+destino: shopee.com.br
+destino: terra.com
+destino: twitch.tv
+destino: 151.101.194.167
+destino: cloudflare.com
+destino: nfe.sefazrs.rs.gov.br
+destino: 187.16.222.134
+destino: 187.16.220.80
+destino: 187.16.216.48
+destino: 187.16.218.98
+destino: sefaz.rs.gov.br
+destino: sicredi.com.br
+destino: 128.14.221.18
+destino: 169.57.197.82
+destino: 169.57.181.198
+destino: 169.57.197.42
+destino: 169.57.197.161
+destino: 104.124.97.8
+destino: 104.124.97.33
+destino: 169.57.197.100
+destino: 15.228.25.138
+destino: 104.160.143.97
+destino: status.riotgames.com
+destino: 203.205.179.145
+destino: 209.197.3.24
+destino: 23.42.246.119
+destino: 157.240.216.14
+destino: 92.122.173.141
+destino: status.playstation.com
+destino: teste.gamersclub.com.br
+destino: 209.197.25.1
+destino: 139.162.30.91
+destino: 13.107.42.15
+destino: 187.2.74.162
+destino: 186.214.37.98
+destino: 189.123.31.33
+destino: 191.32.236.161
+destino: 13.227.99.80
+destino: 108.139.91.241
+destino: 142.250.81.243
+destino: 20.66.40.69
+destino: 108.139.119.67
+destino: 31.13.85.2
+destino: 31.13.90.9
+destino: 69.164.45.61
+destino: 99.84.23.109
+destino: 13.227.86.188
+destino: 23.65.129.49
+destino: 151.101.177.190
+destino: 13.227.115.52
+destino: 2.16.217.194
+destino: 2.23.149.157
+destino: 199.232.114.248
+destino: 23.218.213.153
+destino: 13.227.86.228
+destino: 189.4.5.204
+destino: 172.217.28.142
+destino: 170.144.52.2
+destino: zoom.us
+destino: 51.123.128.14
+destino: teams.microsoft.com

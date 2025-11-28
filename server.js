@@ -32,7 +32,7 @@ const HOST = '::';
 const DB_FILE = path.join(__dirname, 'db.json');
 const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
-const MONITORING_INTERVAL = 10 * 60 * 1000;
+const MONITORING_INTERVAL = 30 * 1000;
 
 let db = { hosts: {}, categories: [] };
 let lastCheckTimestamp = null;
@@ -74,7 +74,7 @@ async function loadDatabase() {
                 parsedData.hosts[destino].category = 'Geral';
             }
         });
-        
+
         db = parsedData;
         console.log('[DB] Banco de dados carregado com sucesso.');
     } catch (error) {
@@ -122,7 +122,7 @@ async function importHostsFromFile() {
         for (const line of lines) {
             let title = null;
             let destino = null;
-            let category = 'Geral'; 
+            let category = 'Geral';
 
             const destinoMatch = line.match(/destino:\s*(\S+)/);
             if (destinoMatch) {
@@ -172,7 +172,7 @@ function executeMtr(host) {
         if (!/^[a-zA-Z0-9.-:]+$/.test(host)) {
             return reject(new Error(`Host inválido: '${host}'. Contém caracteres não permitidos.`));
         }
-        const command = `mtr -r -n -c 10 -4 -z ${host}`;
+        const command = `mtr -r -n -c 3 -4 -z ${host}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 resolve({ error: `Falha ao testar o host ${host}: ${stderr}` });
