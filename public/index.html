@@ -22,7 +22,9 @@
         <div id="sidebar-editor-actions">
             <button id="add-category-btn">+ Nova Categoria</button>
             <button id="manage-users-btn" style="display: none;">Gerenciar Usuários</button>
-            <button id="logout-btn" style="background-color: var(--cor-remover); margin-top: 10px;">Sair</button>
+        </div>
+        <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid #3a3c5a;">
+            <button id="logout-btn" style="background-color: var(--cor-remover);">Sair</button>
         </div>
     </aside>
     <div id="main-content">
@@ -85,29 +87,70 @@
                 </div>
             </form>
         </div>
+    </div>
 
-        <div id="manage-users-modal" class="modal-overlay">
-            <div class="modal-content" style="max-width: 600px;">
-                <h2>Gerenciar Usuários</h2>
-                <div id="user-list" style="margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
-                    <!-- Users will be listed here -->
-                </div>
-                <h3>Adicionar Novo Usuário</h3>
-                <form id="add-user-form">
-                    <input type="text" id="new-user-username" placeholder="Usuário" required>
-                    <input type="password" id="new-user-password" placeholder="Senha" required>
-                    <select id="new-user-role">
+    <div id="manage-users-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px;">
+            <h2>Gerenciar Usuários</h2>
+
+            <div class="table-container">
+                <table id="users-table" class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Email/Usuário</th>
+                            <th>Função</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list-body">
+                        <!-- Users will be listed here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Convidar Novo Usuário</h3>
+            <form id="invite-user-form">
+                <div class="form-row">
+                    <input type="email" id="invite-user-email" placeholder="Email do Usuário" required>
+                    <select id="invite-user-role">
                         <option value="viewer">Visualizador</option>
                         <option value="editor">Editor</option>
                         <option value="admin">Administrador</option>
                     </select>
-                    <div class="modal-actions">
-                        <button type="button" class="cancel-btn">Fechar</button>
-                        <button type="submit">Criar Usuário</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn">Fechar</button>
+                    <button type="submit">Enviar Convite</button>
+                </div>
+            </form>
         </div>
+    </div>
+
+    <div id="edit-user-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Editar Usuário</h2>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-username-hidden">
+                <p>Editando: <strong id="edit-user-display-name"></strong></p>
+
+                <label for="edit-user-password">Nova Senha (deixe em branco para manter)</label>
+                <input type="password" id="edit-user-password" placeholder="Nova Senha">
+
+                <label for="edit-user-role">Função</label>
+                <select id="edit-user-role">
+                    <option value="viewer">Visualizador</option>
+                    <option value="editor">Editor</option>
+                    <option value="admin">Administrador</option>
+                </select>
+
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn">Cancelar</button>
+                    <button type="submit">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
     </div>
     <footer>
         <span id="status-text">Verificando status do servidor...</span>

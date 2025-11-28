@@ -11,6 +11,7 @@ const fs = require('fs').promises;
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
@@ -37,6 +38,27 @@ const DB_FILE = path.join(__dirname, 'db.json');
 const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
 const MONITORING_INTERVAL = 30 * 1000;
+
+// Configuração de Email (Nodemailer)
+// Em produção, use variáveis de ambiente para estas credenciais
+console.log('[Email Config] Host:', process.env.SMTP_HOST || 'smtp.ethereal.email');
+console.log('[Email Config] Port:', process.env.SMTP_PORT || 587);
+console.log('[Email Config] User:', process.env.SMTP_USER || 'ethereal_user');
+
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+    port: process.env.SMTP_PORT || 587,
+    secure: (process.env.SMTP_PORT == 465), // true for 465, false for other ports
+    auth: {
+        user: process.env.SMTP_USER || 'ethereal_user',
+        pass: process.env.SMTP_PASS || 'ethereal_pass'
+    },
+    tls: {
+        rejectUnauthorized: false // Allow self-signed certs
+    },
+    logger: true,
+    debug: true
+});
 
 let db = { hosts: {}, categories: [], users: [] };
 let lastCheckTimestamp = null;
@@ -334,8 +356,134 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+// --- Rotas de Convite e Recuperação de Senha ---
+
+// 1. Convidar Usuário (Admin)
+app.post('/api/users/invite', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+    const { email, role } = req.body;
+    if (!email || !role) return res.status(400).json({ message: 'Email e função são obrigatórios.' });
+
+    // Check if user already exists (by username or email if we had it separately, but here we treat email as unique identifier for invite)
+    // For simplicity, we'll check if any user has this email or username matching the email
+    const existingUser = db.users.find(u => u.username === email || u.email === email);
+    if (existingUser) return res.status(409).json({ message: 'Usuário já existe.' });
+
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const inviteTokenExpires = Date.now() + 3600000; // 1 hour
+
+    const newUser = {
+        username: email, // Initially username is email
+        email: email,
+        passwordHash: null, // No password yet
+        role: role,
+        inviteToken,
+        inviteTokenExpires,
+        status: 'pending'
+    };
+
+    db.users.push(newUser);
+    await saveDatabase();
+
+    // Send Email
+    const inviteLink = `http://${req.headers.host}/setup-password.html?token=${inviteToken}`;
+    const mailOptions = {
+        from: '"Monitoramento MTR" <noreply@monitoramento.com>',
+        to: email,
+        subject: 'Convite para acessar o Monitoramento MTR',
+        text: `Você foi convidado para acessar o sistema. Clique no link para definir sua senha: ${inviteLink}`,
+        html: `<p>Você foi convidado para acessar o sistema.</p><p>Clique no link para definir sua senha: <a href="${inviteLink}">Definir Senha</a></p>`
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email enviado: %s', info.messageId);
+        // Preview only available when sending through an Ethereal account
+        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        res.json({ message: 'Convite enviado com sucesso.', preview: nodemailer.getTestMessageUrl(info) });
+    } catch (error) {
+        console.error('Erro ao enviar email:', error);
+        res.status(500).json({ message: 'Erro ao enviar email de convite.' });
+    }
+});
+
+// 2. Definir Senha (Primeiro Acesso)
+app.post('/api/auth/setup-password', async (req, res) => {
+    const { token, password } = req.body;
+    const user = db.users.find(u => u.inviteToken === token && u.inviteTokenExpires > Date.now());
+
+    if (!user) return res.status(400).json({ message: 'Token inválido ou expirado.' });
+
+    try {
+        user.passwordHash = await bcrypt.hash(password, 10);
+        user.inviteToken = undefined;
+        user.inviteTokenExpires = undefined;
+        user.status = 'active';
+        await saveDatabase();
+        res.json({ message: 'Senha definida com sucesso. Você pode fazer login agora.' });
+    } catch (e) {
+        res.status(500).json({ message: 'Erro ao definir senha.' });
+    }
+});
+
+// 3. Esqueci Minha Senha (Solicitar)
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    const user = db.users.find(u => u.email === email || u.username === email);
+
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = Date.now() + 3600000; // 1 hour
+
+    user.resetToken = resetToken;
+    user.resetTokenExpires = resetTokenExpires;
+    await saveDatabase();
+
+    const resetLink = `http://${req.headers.host}/reset-password.html?token=${resetToken}`;
+    const mailOptions = {
+        from: '"Monitoramento MTR" <noreply@monitoramento.com>',
+        to: user.email || user.username, // Fallback to username if email not set (legacy)
+        subject: 'Recuperação de Senha',
+        text: `Você solicitou a recuperação de senha. Clique no link para redefinir: ${resetLink}`,
+        html: `<p>Você solicitou a recuperação de senha.</p><p>Clique no link para redefinir: <a href="${resetLink}">Redefinir Senha</a></p>`
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email de reset enviado: %s', info.messageId);
+        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        res.json({ message: 'Email de recuperação enviado.', preview: nodemailer.getTestMessageUrl(info) });
+    } catch (error) {
+        console.error('Erro ao enviar email:', error);
+        res.status(500).json({ message: 'Erro ao enviar email.' });
+    }
+});
+
+// 4. Redefinir Senha (Com Token)
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    const user = db.users.find(u => u.resetToken === token && u.resetTokenExpires > Date.now());
+
+    if (!user) return res.status(400).json({ message: 'Token inválido ou expirado.' });
+
+    try {
+        user.passwordHash = await bcrypt.hash(password, 10);
+        user.resetToken = undefined;
+        user.resetTokenExpires = undefined;
+        await saveDatabase();
+        res.json({ message: 'Senha redefinida com sucesso.' });
+    } catch (e) {
+        res.status(500).json({ message: 'Erro ao redefinir senha.' });
+    }
+});
+
 app.get('/api/users', authenticateToken, authorizeRole(['admin']), (req, res) => {
-    const usersSafe = db.users.map(u => ({ username: u.username, role: u.role }));
+    const usersSafe = db.users.map(u => ({
+        username: u.username,
+        email: u.email,
+        role: u.role,
+        status: u.status || 'active'
+    }));
     res.json(usersSafe);
 });
 

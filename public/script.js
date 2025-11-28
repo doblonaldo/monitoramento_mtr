@@ -46,12 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const manageUsersBtn = document.getElementById('manage-users-btn');
         manageUsersBtn.style.display = 'block';
 
-        const { modal, form, closeModal } = setupModal('manage-users-modal', 'manage-users-btn', 'add-user-form');
-        const userList = document.getElementById('user-list');
+        const { modal, form, closeModal } = setupModal('manage-users-modal', 'manage-users-btn', 'invite-user-form');
+        const { modal: editModal, form: editForm, closeModal: closeEditModal } = setupModal('edit-user-modal', null, 'edit-user-form');
+        const userListBody = document.getElementById('user-list-body');
 
         manageUsersBtn.addEventListener('click', async () => {
-            await loadUsers();
             modal.classList.add('visible');
+            await loadUsers();
         });
 
         async function loadUsers() {
@@ -59,13 +60,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const res = await fetch(`${API_URL}/users`, { headers: authHeadersGet });
                 if (!res.ok) throw new Error('Falha ao carregar usuários');
                 const users = await res.json();
-                userList.innerHTML = users.map(u => `
-                    <div style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #444;">
-                        <span>${u.username} (${u.role})</span>
-                        ${u.username !== 'admin' ? `<button class="delete-user-btn" data-username="${u.username}" style="background: var(--cor-remover); padding: 2px 5px;">Excluir</button>` : ''}
-                    </div>
+
+                userListBody.innerHTML = users.map(u => `
+                    <tr>
+                        <td>${u.email || u.username}</td>
+                        <td>${u.role}</td>
+                        <td>${u.status === 'pending' ? '<span style="color: orange;">Pendente</span>' : '<span style="color: green;">Ativo</span>'}</td>
+                        <td class="user-actions">
+                            <button class="edit-user-btn" data-username="${u.username}" data-role="${u.role}">Editar</button>
+                            ${u.username !== 'admin' ? `<button class="delete-user-btn" data-username="${u.username}">Excluir</button>` : ''}
+                        </td>
+                    </tr>
                 `).join('');
 
+                // Attach event listeners
                 document.querySelectorAll('.delete-user-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         if (confirm(`Remover usuário ${e.target.dataset.username}?`)) {
@@ -73,8 +81,48 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 });
+
+                document.querySelectorAll('.edit-user-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        openEditUserModal(e.target.dataset.username, e.target.dataset.role);
+                    });
+                });
+
             } catch (e) { console.error(e); }
         }
+
+        function openEditUserModal(username, role) {
+            document.getElementById('edit-user-username-hidden').value = username;
+            document.getElementById('edit-user-display-name').textContent = username;
+            document.getElementById('edit-user-role').value = role;
+            document.getElementById('edit-user-password').value = ''; // Clear password
+            editModal.classList.add('visible');
+        }
+
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('edit-user-username-hidden').value;
+            const password = document.getElementById('edit-user-password').value;
+            const role = document.getElementById('edit-user-role').value;
+
+            const body = { role };
+            if (password) body.password = password;
+
+            try {
+                const res = await fetch(`${API_URL}/users/${username}`, {
+                    method: 'PUT',
+                    headers: authHeaders,
+                    body: JSON.stringify(body)
+                });
+                if (res.ok) {
+                    closeEditModal();
+                    loadUsers();
+                } else {
+                    const data = await res.json();
+                    alert(data.message || 'Erro ao atualizar usuário');
+                }
+            } catch (e) { alert('Erro ao atualizar usuário'); }
+        });
 
         async function deleteUser(username) {
             try {
@@ -86,24 +134,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('new-user-username').value;
-            const password = document.getElementById('new-user-password').value;
-            const role = document.getElementById('new-user-role').value;
+            const email = document.getElementById('invite-user-email').value;
+            const role = document.getElementById('invite-user-role').value;
 
             try {
-                const res = await fetch(`${API_URL}/users`, {
+                const res = await fetch(`${API_URL}/users/invite`, {
                     method: 'POST',
                     headers: authHeaders,
-                    body: JSON.stringify({ username, password, role })
+                    body: JSON.stringify({ email, role })
                 });
+                const data = await res.json();
                 if (res.ok) {
                     form.reset();
                     loadUsers();
+                    if (data.preview) {
+                        alert(`Convite enviado! (Modo Teste)\nLink: ${data.preview}`);
+                        window.open(data.preview, '_blank');
+                    } else {
+                        alert(data.message);
+                    }
                 } else {
-                    const data = await res.json();
                     alert(data.message);
                 }
-            } catch (e) { alert('Erro ao criar usuário'); }
+            } catch (e) { alert('Erro ao enviar convite'); }
         });
     }
 
