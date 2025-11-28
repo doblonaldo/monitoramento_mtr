@@ -3,52 +3,166 @@
 // |      Backend com monitoramento agendado, detecção de mudanças e API.      |
 // -----------------------------------------------------------------------------
 
-const express = require('express');
-const { exec } = require('child_process');
-const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
-const fs = require('fs').promises;
-const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
+const cors = require('cors');
+const { exec } = require('child_process');
 const jwt = require('jsonwebtoken');
-// const nodemailer = require('nodemailer'); // Removed as per request
-
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
-
-// --- Carregar Variáveis de Ambiente ---
-const envPath = path.join(__dirname, '.env');
-const setupEnv = async () => {
-    try {
-        await fs.access(envPath);
-        require('dotenv').config();
-    } catch (error) {
-        console.log('[ENV] Arquivo .env não encontrado. Gerando um novo...');
-        const newToken = crypto.randomBytes(16).toString('hex');
-        await fs.writeFile(envPath, `EDITOR_TOKEN=${newToken}\n`);
-        console.log(`[ENV] Novo token de edição gerado e salvo em .env`);
-        require('dotenv').config();
-    }
-};
-
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const express = require('express');
 
 const app = express();
-const PORT = 3000;
-const HOST = '::';
-const DB_FILE = path.join(__dirname, 'db.json');
-const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
+const port = 3000;
+
+// Configurações
+const DATA_FILE = path.join(__dirname, 'db.json'); // Renamed from DB_FILE
+const HOSTS_FILE = path.join(__dirname, 'hosts.txt'); // Renamed from HOST_LIST_FILE
+const LOGS_FILE = path.join(__dirname, 'system_logs.json');
+
+// --- Helper de Logs ---
+async function logSystemAction(username, action, details = '') {
+    const logEntry = {
+        timestamp: new Date().toISOString(),
+        username,
+        action,
+        details
+    };
+
+    let logs = [];
+    try {
+        if (fs.existsSync(LOGS_FILE)) {
+            const data = fs.readFileSync(LOGS_FILE, 'utf8');
+            logs = JSON.parse(data);
+        }
+    } catch (err) {
+        console.error('Erro ao ler logs:', err);
+    }
+
+    logs.unshift(logEntry); // Adiciona no início
+    if (logs.length > 1000) logs = logs.slice(0, 1000); // Mantém apenas os últimos 1000 logs
+
+    try {
+        fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2));
+    } catch (err) {
+        console.error('Erro ao salvar log:', err);
+    }
+}
+// ---------------------
+
+// --- Carregar Variáveis de Ambiente ---
+// --- Carregar Variáveis de Ambiente ---
+const envPath = path.join(__dirname, '.env');
+
+try {
+    if (fs.existsSync(envPath)) {
+        require('dotenv').config();
+    } else {
+        console.log('[ENV] Arquivo .env não encontrado. Gerando um novo...');
+        const defaultEnv = `JWT_SECRET=${crypto.randomBytes(64).toString('hex')}\nEDITOR_TOKEN=${crypto.randomBytes(16).toString('hex')}\nPORT=3000\n`;
+        fs.writeFileSync(envPath, defaultEnv);
+        require('dotenv').config();
+    }
+} catch (error) {
+    console.error('[ENV] Erro ao carregar .env:', error);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'seu_segredo_super_secreto';
+const EDITOR_TOKEN = process.env.EDITOR_TOKEN;
+const LOGIN_ICON = process.env.LOGIN_ICON; // New config
+
+// --- Configuração do Banco de Dados (JSON) ---
+let db = {
+    users: [],
+    hosts: [],
+    categories: []
+};
+
+// --- Funções Auxiliares ---
+async function loadDatabase() {
+    try {
+        const data = await fs.promises.readFile(DATA_FILE, 'utf8');
+        let parsedData = JSON.parse(data);
+
+        // Ensure hosts is an array
+        if (!parsedData.hosts || typeof parsedData.hosts === 'object' && !Array.isArray(parsedData.hosts)) {
+            parsedData.hosts = Object.values(parsedData.hosts); // Convert old object format to array
+        }
+        if (!parsedData.categories || !Array.isArray(parsedData.categories)) {
+            parsedData.categories = ['Geral'];
+        } else if (!parsedData.categories.includes('Geral')) {
+            parsedData.categories.unshift('Geral');
+        }
+
+        parsedData.hosts.forEach(host => {
+            if (!host.category) {
+                host.category = 'Geral';
+            }
+        });
+
+        if (!parsedData.users || !Array.isArray(parsedData.users)) {
+            parsedData.users = [];
+        }
+
+        // Create default admin if no users exist
+        if (parsedData.users.length === 0) {
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            parsedData.users.push({
+                username: 'admin',
+                password: hashedPassword, // Changed from passwordHash
+                role: 'admin',
+                status: 'active'
+            });
+            console.log('[DB] Usuário admin padrão criado (admin/admin123).');
+            db = parsedData; // Assign before saving
+            await saveDatabase(); // Save immediately
+        } else {
+            // Ensure existing users have a 'status' field and migrate passwordHash to password
+            parsedData.users.forEach(user => {
+                if (!user.status) user.status = 'active';
+                if (user.passwordHash && !user.password) {
+                    user.password = user.passwordHash;
+                    delete user.passwordHash;
+                }
+            });
+            await saveDatabase(); // Save migration changes
+        }
+
+        db = parsedData;
+        console.log('[DB] Banco de dados carregado com sucesso.');
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.log('[DB] Arquivo db.json não encontrado. Criando um novo com a categoria "Geral" e usuário admin.');
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            db = {
+                hosts: [],
+                categories: ['Geral'],
+                users: [{ username: 'admin', password: hashedPassword, role: 'admin', status: 'active' }]
+            };
+            await saveDatabase();
+        } else {
+            console.error('[DB] Erro ao carregar o banco de dados:', error);
+        }
+    }
+}
+
+async function saveDatabase() {
+    try {
+        db.categories = [...new Set(db.categories)];
+        await fs.promises.writeFile(DATA_FILE, JSON.stringify(db, null, 2));
+    } catch (error) {
+        console.error('[DB] Erro ao salvar o banco de dados:', error);
+    }
+}
+
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
 const MONITORING_INTERVAL = 30 * 1000;
 
-// Email configuration removed.
-// const transporter = ...
-
-let db = { hosts: {}, categories: [], users: [] };
 let lastCheckTimestamp = null;
 
 app.use(cors());
 app.use(express.json());
 
-// --- Middleware de Autenticação ---
 // --- Middleware de Autenticação ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -84,72 +198,13 @@ const requireEditorToken = (req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-// --- Funções do Banco de Dados ---
-async function loadDatabase() {
-    try {
-        await fs.access(DB_FILE);
-        const data = await fs.readFile(DB_FILE, 'utf-8');
-        let parsedData = JSON.parse(data);
-
-        if (!parsedData.hosts || Array.isArray(parsedData.hosts)) {
-            parsedData.hosts = {};
-        }
-        if (!parsedData.categories || !Array.isArray(parsedData.categories)) {
-            parsedData.categories = ['Geral'];
-        } else if (!parsedData.categories.includes('Geral')) {
-            parsedData.categories.unshift('Geral');
-        }
-
-        Object.keys(parsedData.hosts).forEach(destino => {
-            if (!parsedData.hosts[destino].category) {
-                parsedData.hosts[destino].category = 'Geral';
-            }
-        });
-
-        if (!parsedData.users || !Array.isArray(parsedData.users)) {
-            parsedData.users = [];
-        }
-
-        // Create default admin if no users exist
-        if (parsedData.users.length === 0) {
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            parsedData.users.push({
-                username: 'admin',
-                passwordHash: hashedPassword,
-                role: 'admin'
-            });
-            console.log('[DB] Usuário admin padrão criado (admin/admin123).');
-            await saveDatabase(); // Save immediately
-        }
-
-        db = parsedData;
-        console.log('[DB] Banco de dados carregado com sucesso.');
-    } catch (error) {
-        console.log('[DB] Arquivo db.json não encontrado. Criando um novo com a categoria "Geral" e usuário admin.');
-        const hashedPassword = await bcrypt.hash('admin123', 10);
-        db = {
-            hosts: {},
-            categories: ['Geral'],
-            users: [{ username: 'admin', passwordHash: hashedPassword, role: 'admin' }]
-        };
-        await saveDatabase();
-    }
-}
-
-async function saveDatabase() {
-    try {
-        db.categories = [...new Set(db.categories)];
-        await fs.writeFile(DB_FILE, JSON.stringify(db, null, 2));
-    } catch (error) {
-        console.error('[DB] Erro ao salvar o banco de dados:', error);
-    }
-}
+// --- Funções do Banco de Dados --- (Moved to top)
 
 async function saveHostList() {
     try {
-        const hostLines = Object.entries(db.hosts).map(([destino, data]) => {
-            let line = `destino: ${destino}`;
-            if (data.title && data.title !== destino) {
+        const hostLines = db.hosts.map(data => {
+            let line = `destino: ${data.destino}`;
+            if (data.title && data.title !== data.destino) {
                 line = `title: ${data.title}, ${line}`;
             }
             if (data.category && data.category !== 'Geral') {
@@ -157,7 +212,7 @@ async function saveHostList() {
             }
             return line;
         });
-        await fs.writeFile(MONITORED_HOSTS_FILE, hostLines.join('\n'));
+        await fs.promises.writeFile(MONITORED_HOSTS_FILE, hostLines.join('\n'));
         console.log(`[File] Lista de hosts monitorados salva em ${MONITORED_HOSTS_FILE}`);
     } catch (error) {
         console.error('[File] Erro ao salvar a lista de hosts:', error);
@@ -166,8 +221,8 @@ async function saveHostList() {
 
 async function importHostsFromFile() {
     try {
-        await fs.access(HOST_LIST_FILE);
-        const data = await fs.readFile(HOST_LIST_FILE, 'utf-8');
+        await fs.promises.access(HOSTS_FILE);
+        const data = await fs.promises.readFile(HOSTS_FILE, 'utf-8');
         const lines = data.split('\n').map(l => l.trim()).filter(l => l);
         let newHostsAdded = false;
 
@@ -187,15 +242,16 @@ async function importHostsFromFile() {
                 destino = line;
             }
 
-            if (destino && !db.hosts[destino]) {
+            if (destino && !db.hosts.some(h => h.destino === destino)) {
                 console.log(`[Import] Host "${destino}" (Categoria: ${category}) do arquivo não está no DB. Adicionando...`);
-                db.hosts[destino] = {
+                db.hosts.push({
+                    destino: destino,
                     title: title || destino,
                     category: category,
                     lastMtr: null,
                     history: [],
                     status: 'ok'
-                };
+                });
                 if (!db.categories.includes(category)) {
                     db.categories.push(category);
                 }
@@ -210,7 +266,7 @@ async function importHostsFromFile() {
         }
     } catch (error) {
         if (error.code === 'ENOENT') {
-            console.log(`[Import] Arquivo de importação "${HOST_LIST_FILE}" não encontrado. Pulando etapa.`);
+            console.log(`[Import] Arquivo de importação "${HOSTS_FILE}" não encontrado. Pulando etapa.`);
         } else {
             console.error('[Import] Erro ao ler o arquivo de hosts:', error);
         }
@@ -246,7 +302,7 @@ function executeMtr(host) {
 
 async function checkHost(hostDestino) {
     const newMtrResult = await executeMtr(hostDestino).catch(err => ({ error: err.message }));
-    const hostData = db.hosts[hostDestino];
+    const hostData = db.hosts.find(h => h.destino === hostDestino);
     if (!hostData) return;
 
     if (newMtrResult.error) {
@@ -289,7 +345,7 @@ function startMonitoring() {
     console.log(`[Monitor] Iniciando ciclo de monitoramento a cada ${MONITORING_INTERVAL / 60000} minutos.`);
     setInterval(async () => {
         console.log('[Monitor] Executando ciclo de verificação...');
-        const hostsToMonitor = Object.keys(db.hosts);
+        const hostsToMonitor = db.hosts.map(h => h.destino);
         if (hostsToMonitor.length === 0) {
             lastCheckTimestamp = new Date().toISOString();
             return;
@@ -299,13 +355,11 @@ function startMonitoring() {
         }
 
         let hostsWereRemoved = false;
-        const currentHosts = Object.keys(db.hosts);
-        for (const host of currentHosts) {
-            if (db.hosts[host].toBeDeleted) {
-                delete db.hosts[host];
-                hostsWereRemoved = true;
-                console.log(`[Monitor] Host ${host} removido automaticamente do banco de dados.`);
-            }
+        const initialHostCount = db.hosts.length;
+        db.hosts = db.hosts.filter(host => !host.toBeDeleted);
+        if (db.hosts.length < initialHostCount) {
+            hostsWereRemoved = true;
+            console.log(`[Monitor] Hosts removidos automaticamente do banco de dados.`);
         }
 
         await saveDatabase();
@@ -327,14 +381,43 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).json({ message: 'Usuário ou senha inválidos.' });
     }
     try {
-        if (await bcrypt.compare(password, user.passwordHash)) {
+        const storedPassword = user.password || user.passwordHash;
+        if (user && await bcrypt.compare(password, storedPassword)) {
+            if (user.status !== 'active') {
+                return res.status(403).json({ message: 'Conta pendente ou inativa.' });
+            }
             const accessToken = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+
+            // Log Login
+            logSystemAction(user.username, 'Login', 'Usuário realizou login.');
+
             res.json({ accessToken, role: user.role, username: user.username });
         } else {
-            res.status(401).json({ message: 'Usuário ou senha inválidos.' });
+            res.status(401).json({ message: 'Credenciais inválidas.' });
         }
     } catch (e) {
         res.status(500).send();
+    }
+});
+
+// --- Rota de Logout (Log) ---
+app.post('/api/logout', authenticateToken, (req, res) => {
+    logSystemAction(req.user.username, 'Logout', 'Usuário realizou logout.');
+    res.json({ message: 'Logout registrado.' });
+});
+
+// --- Rota de Logs (Admin) ---
+app.get('/api/logs', authenticateToken, authorizeRole(['admin']), (req, res) => {
+    try {
+        if (fs.existsSync(LOGS_FILE)) {
+            const data = fs.readFileSync(LOGS_FILE, 'utf8');
+            const logs = JSON.parse(data);
+            res.json(logs);
+        } else {
+            res.json([]);
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao ler logs.' });
     }
 });
 
@@ -356,7 +439,7 @@ app.post('/api/users/invite', authenticateToken, authorizeRole(['admin']), async
     const newUser = {
         username: email, // Initially username is email
         email: email,
-        passwordHash: null, // No password yet
+        password: null, // No password yet (changed from passwordHash)
         role: role,
         inviteToken,
         inviteTokenExpires,
@@ -365,6 +448,9 @@ app.post('/api/users/invite', authenticateToken, authorizeRole(['admin']), async
 
     db.users.push(newUser);
     await saveDatabase();
+
+    // Log Invite User
+    logSystemAction(req.user.username, 'Convidar Usuário', `Convidou usuário: ${email} (${role})`);
 
     // Send Email - REMOVED
     // Instead, return the link directly
@@ -385,7 +471,7 @@ app.post('/api/auth/setup-password', async (req, res) => {
     if (!user) return res.status(400).json({ message: 'Token inválido ou expirado.' });
 
     try {
-        user.passwordHash = await bcrypt.hash(password, 10);
+        user.password = await bcrypt.hash(password, 10); // Changed from passwordHash
         user.inviteToken = undefined;
         user.inviteTokenExpires = undefined;
         user.status = 'active';
@@ -414,6 +500,9 @@ app.post('/api/users/:username/reset-link', authenticateToken, authorizeRole(['a
 
     console.log(`[Reset] Link generated for ${user.username}: ${resetLink}`);
 
+    // Log Reset Link Generation
+    logSystemAction(req.user.username, 'Gerar Link Reset', `Gerou link de reset para ${user.username}`);
+
     res.json({
         message: 'Link de redefinição gerado com sucesso.',
         link: resetLink
@@ -428,10 +517,12 @@ app.post('/api/auth/reset-password', async (req, res) => {
     if (!user) return res.status(400).json({ message: 'Token inválido ou expirado.' });
 
     try {
-        user.passwordHash = await bcrypt.hash(password, 10);
+        user.password = await bcrypt.hash(password, 10); // Changed from passwordHash
         user.resetToken = undefined;
         user.resetTokenExpires = undefined;
         await saveDatabase();
+        // Log Reset Password
+        logSystemAction(user.username, 'Redefinir Senha', 'Usuário redefiniu a senha.');
         res.json({ message: 'Senha redefinida com sucesso.' });
     } catch (e) {
         res.status(500).json({ message: 'Erro ao redefinir senha.' });
@@ -455,8 +546,9 @@ app.post('/api/users', authenticateToken, authorizeRole(['admin']), async (req, 
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        db.users.push({ username, passwordHash: hashedPassword, role });
+        db.users.push({ username, password: hashedPassword, role, status: 'active' }); // Changed from passwordHash
         await saveDatabase();
+        logSystemAction(req.user.username, 'Criar Usuário', `Criou usuário: ${username} (${role})`);
         res.status(201).json({ message: 'Usuário criado.' });
     } catch (e) {
         res.status(500).json({ message: 'Erro ao criar usuário.' });
@@ -465,17 +557,25 @@ app.post('/api/users', authenticateToken, authorizeRole(['admin']), async (req, 
 
 app.put('/api/users/:username', authenticateToken, authorizeRole(['admin']), async (req, res) => {
     const { username } = req.params;
-    const { password, role } = req.body;
+    const { password, role, status } = req.body;
     const user = db.users.find(u => u.username === username);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
 
+    let changes = [];
     if (password) {
-        user.passwordHash = await bcrypt.hash(password, 10);
+        user.password = await bcrypt.hash(password, 10); // Changed from passwordHash
+        changes.push('senha');
     }
-    if (role) {
+    if (role && user.role !== role) {
         user.role = role;
+        changes.push(`função para ${role}`);
+    }
+    if (status && user.status !== status) {
+        user.status = status;
+        changes.push(`status para ${status}`);
     }
     await saveDatabase();
+    logSystemAction(req.user.username, 'Atualizar Usuário', `Atualizou usuário: ${username}. Mudanças: ${changes.join(', ')}`);
     res.json({ message: 'Usuário atualizado.' });
 });
 
@@ -488,15 +588,17 @@ app.delete('/api/users/:username', authenticateToken, authorizeRole(['admin']), 
 
     if (db.users.length < initialLength) {
         await saveDatabase();
+        logSystemAction(req.user.username, 'Remover Usuário', `Removeu usuário: ${username}`);
         res.json({ message: 'Usuário removido.' });
     } else {
         res.status(404).json({ message: 'Usuário não encontrado.' });
     }
 });
+
 app.get('/api/hosts', (req, res) => {
-    const hostList = Object.entries(db.hosts).map(([destino, data]) => ({
-        destino: destino,
-        title: data.title || destino,
+    const hostList = db.hosts.map(data => ({
+        destino: data.destino,
+        title: data.title || data.destino,
         category: data.category || 'Geral'
     }));
     res.status(200).json(hostList);
@@ -508,8 +610,9 @@ app.get('/api/categories', (req, res) => {
 
 app.get('/api/hosts/:host', (req, res) => {
     const host = req.params.host;
-    if (db.hosts[host]) {
-        res.status(200).json(db.hosts[host]);
+    const hostData = db.hosts.find(h => h.destino === host);
+    if (hostData) {
+        res.status(200).json(hostData);
     } else {
         res.status(404).json({ message: 'Host não encontrado.' });
     }
@@ -518,8 +621,12 @@ app.get('/api/hosts/:host', (req, res) => {
 app.get('/api/status', (req, res) => {
     res.status(200).json({
         lastCheck: lastCheckTimestamp,
-        editor_token: req.query.editor_token === process.env.EDITOR_TOKEN ? process.env.EDITOR_TOKEN : undefined
+        editor_token: req.query.editor_token === EDITOR_TOKEN ? EDITOR_TOKEN : undefined
     });
+});
+
+app.get('/api/public-config', (req, res) => {
+    res.json({ loginIcon: LOGIN_ICON });
 });
 
 app.post('/api/hosts', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
@@ -529,14 +636,15 @@ app.post('/api/hosts', authenticateToken, authorizeRole(['editor', 'admin']), as
     if (!destino) {
         return res.status(400).json({ message: 'O destino é obrigatório.' });
     }
-    if (db.hosts[destino]) {
+    if (db.hosts.some(h => h.destino === destino)) {
         return res.status(409).json({ message: 'Este destino já está sendo monitorado.' });
     }
     if (!db.categories.includes(finalCategory)) {
         db.categories.push(finalCategory);
     }
 
-    db.hosts[destino] = {
+    const newHost = {
+        destino: destino,
         title: title || destino,
         category: finalCategory,
         lastMtr: null,
@@ -545,9 +653,13 @@ app.post('/api/hosts', authenticateToken, authorizeRole(['editor', 'admin']), as
     };
     console.log(`[API] Host adicionado: ${destino} (Categoria: ${finalCategory}). Verificação inicial em andamento...`);
     await checkHost(destino);
+    db.hosts.push(newHost);
     await saveDatabase();
-    await saveHostList();
-    res.status(201).json({ message: `Host ${destino} adicionado com sucesso.` });
+
+    // Log Add Host
+    logSystemAction(req.user.username, 'Adicionar Host', `Adicionou host: ${destino} (${category})`);
+
+    res.status(201).json(newHost);
 });
 
 app.post('/api/categories', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
@@ -561,20 +673,29 @@ app.post('/api/categories', authenticateToken, authorizeRole(['editor', 'admin']
     }
     db.categories.push(categoryName);
     await saveDatabase();
+
+    // Log Add Category
+    logSystemAction(req.user.username, 'Adicionar Categoria', `Adicionou categoria: ${categoryName}`);
+
     console.log(`[API] Categoria adicionada: ${categoryName}`);
     res.status(201).json({ message: `Categoria "${categoryName}" adicionada com sucesso.` });
 });
 
 app.delete('/api/hosts/:host', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
     const hostToRemove = req.params.host;
-    if (!db.hosts[hostToRemove]) {
-        return res.status(404).json({ message: 'Host não encontrado.' });
+    const initialLength = db.hosts.length;
+    db.hosts = db.hosts.filter(h => h.destino !== hostToRemove);
+
+    if (db.hosts.length < initialLength) {
+        await saveDatabase();
+        await saveHostList(); // Assuming this is still needed for some reason, though saveDatabase should handle it.
+        // Log Remove Host
+        logSystemAction(req.user.username, 'Remover Host', `Removeu host: ${hostToRemove}`);
+        console.log(`[API] Host removido: ${hostToRemove}`);
+        res.status(200).json({ message: `Host ${hostToRemove} removido com sucesso.` });
+    } else {
+        res.status(404).json({ message: 'Host não encontrado.' });
     }
-    delete db.hosts[hostToRemove];
-    await saveDatabase();
-    await saveHostList();
-    console.log(`[API] Host removido: ${hostToRemove}`);
-    res.status(200).json({ message: `Host ${hostToRemove} removido com sucesso.` });
 });
 
 app.delete('/api/categories/:category', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
@@ -586,15 +707,18 @@ app.delete('/api/categories/:category', authenticateToken, authorizeRole(['edito
         return res.status(404).json({ message: 'Categoria não encontrada.' });
     }
 
-    Object.keys(db.hosts).forEach(destino => {
-        if (db.hosts[destino].category === categoryToRemove) {
-            db.hosts[destino].category = 'Geral';
-        }
+    // Move hosts from deleted category to 'Geral'
+    db.hosts.forEach(h => {
+        if (h.category === categoryToRemove) h.category = 'Geral';
     });
 
     db.categories = db.categories.filter(c => c !== categoryToRemove);
     await saveDatabase();
-    await saveHostList();
+    await saveHostList(); // Assuming this is still needed for some reason, though saveDatabase should handle it.
+
+    // Log Remove Category
+    logSystemAction(req.user.username, 'Remover Categoria', `Removeu categoria: ${categoryToRemove}`);
+
     console.log(`[API] Categoria removida: ${categoryToRemove}`);
     res.status(200).json({ message: `Categoria ${categoryToRemove} removida. Os hosts foram movidos para "Geral".` });
 });
@@ -617,10 +741,13 @@ app.get('/', (req, res) => {
 
 
 // --- Inicialização do Servidor ---
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Listen on all interfaces
+
+// --- Inicialização do Servidor ---
 app.listen(PORT, HOST, async () => {
-    await setupEnv();
     console.log(`Servidor rodando na porta ${PORT}, acessível via IPv4 e IPv6.`);
-    console.log(`Acesse o painel em modo de visualização, por exemplo: http://localhost:${PORT} ou http://[::1]:${PORT}`);
+    console.log(`Acesse o painel em modo de visualização, por exemplo: http://localhost:${PORT}`);
     console.log(`Para editar, use a URL com o token de edição, por exemplo: http://localhost:${PORT}/edit?editor_token=${process.env.EDITOR_TOKEN}`);
 
     await loadDatabase();

@@ -3,6 +3,29 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const errorMsg = document.getElementById('error-msg'); // Re-added errorMsg for consistency and the final catch block
+    const loginForm = document.getElementById('login-form');
+    const iconContainer = document.getElementById('login-icon-container');
+
+    // Fetch public config for icon
+    try {
+        const res = await fetch('/api/public-config');
+        if (res.ok) {
+            const config = await res.json();
+            if (config.loginIcon) {
+                const img = document.createElement('img');
+                img.src = config.loginIcon;
+                img.alt = 'Logo';
+                img.className = 'login-icon';
+                // Clear existing icon if any, to prevent duplicates on multiple submissions
+                while (iconContainer.firstChild) {
+                    iconContainer.removeChild(iconContainer.firstChild);
+                }
+                iconContainer.appendChild(img);
+            }
+        }
+    } catch (e) {
+        console.error('Erro ao carregar configuração:', e);
+    }
 
     try {
         const res = await fetch('/api/login', {

@@ -37,7 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('sidebar-collapsed');
     });
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+        try {
+            await fetch('/api/logout', { method: 'POST', headers: authHeadersGet });
+        } catch (e) {
+            console.error('Erro ao registrar logout:', e);
+        }
         localStorage.clear();
         window.location.href = '/login.html';
     });
@@ -46,14 +51,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const manageUsersBtn = document.getElementById('manage-users-btn');
         manageUsersBtn.style.display = 'block';
 
+        // Add "Ver Logs" button to sidebar
+        const viewLogsBtn = document.createElement('button');
+        viewLogsBtn.id = 'view-logs-btn';
+        viewLogsBtn.className = 'sidebar-btn secondary-btn'; // Use classes
+        viewLogsBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Logs do Sistema
+        `;
+        sidebarEditorActions.appendChild(viewLogsBtn);
+
         const { modal, form, closeModal } = setupModal('manage-users-modal', 'manage-users-btn', 'invite-user-form');
         const { modal: editModal, form: editForm, closeModal: closeEditModal } = setupModal('edit-user-modal', null, 'edit-user-form');
+        const { modal: logsModal, closeModal: closeLogsModal } = setupModal('system-logs-modal', 'view-logs-btn', null);
+
         const userListBody = document.getElementById('user-list-body');
+        const logsListBody = document.getElementById('logs-list-body');
 
         manageUsersBtn.addEventListener('click', async () => {
             modal.classList.add('visible');
             await loadUsers();
         });
+
+        viewLogsBtn.addEventListener('click', async () => {
+            logsModal.classList.add('visible');
+            await loadLogs();
+        });
+
+        async function loadLogs() {
+            try {
+                const res = await fetch(`${API_URL}/logs`, { headers: authHeadersGet });
+                if (!res.ok) throw new Error('Falha ao carregar logs');
+                const logs = await res.json();
+
+                logsListBody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${new Date(log.timestamp).toLocaleString('pt-BR')}</td>
+                        <td>${log.username}</td>
+                        <td>${log.action}</td>
+                        <td>${log.details}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                logsListBody.innerHTML = '<tr><td colspan="4">Erro ao carregar logs.</td></tr>';
+            }
+        }
 
         async function loadUsers() {
             try {
@@ -86,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const data = await res.json();
 
                         if (res.ok) {
-                            prompt(`Link gerado com sucesso!\nCopie o link abaixo e envie para o usuário:`, data.link);
+                            showLinkModal('Link de Redefinição', data.link);
                         } else {
                             alert(data.message);
                         }
@@ -178,8 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     form.reset();
 
                     if (data.link) {
-                        // Always show the link for manual copying
-                        prompt(`Usuário convidado com sucesso!\nCopie o link abaixo e envie para o usuário:`, data.link);
+                        showLinkModal('Convite Gerado', data.link);
                     } else {
                         alert(data.message);
                     }
@@ -268,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? allHostsData
             : allHostsData.filter(host => host.category === currentCategory);
 
-        hostsToRender.forEach(hostInfo => renderHostCard(hostInfo));
+        hostsToRender.forEach(hostInfo => createHostCard(hostInfo));
         updateAllTimelines();
     }
 
@@ -276,11 +318,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ALTERAÇÃO: A função agora recebe um objeto {destino, title, category}
-    function renderHostCard(hostData) {
-        const { destino, title, category } = hostData;
+    function createHostCard(hostData) {
+        const destino = hostData.destino;
+        if (!destino) return null; // Prevent crash if destino is missing
         const cardId = `card-${destino.replace(/[.:]/g, '-')}`;
         if (document.getElementById(cardId)) return;
 
+        const { title, category } = hostData;
         const card = document.createElement('div');
         card.className = 'host-card';
         card.id = cardId;
@@ -468,8 +512,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função genérica para controlar modais
     function setupModal(modalId, openBtnId, formId) {
         const modal = document.getElementById(modalId);
-        const form = document.getElementById(formId);
-        const openBtn = document.getElementById(openBtnId);
+        const form = formId ? document.getElementById(formId) : null;
+        const openBtn = openBtnId ? document.getElementById(openBtnId) : null;
 
         if (openBtn) {
             openBtn.addEventListener('click', () => modal.classList.add('visible'));
@@ -542,6 +586,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FIM DA ALTERAÇÃO: Lógica dos Modais ---
+
+    // --- Link Modal Logic ---
+    const linkModal = document.getElementById('link-modal');
+    const linkInput = document.getElementById('generated-link-input');
+    const copyLinkBtn = document.getElementById('copy-link-btn');
+    const linkModalTitle = document.getElementById('link-modal-title');
+
+    function showLinkModal(title, link) {
+        linkModalTitle.textContent = title;
+        linkInput.value = link;
+        linkModal.classList.add('visible');
+    }
+
+    if (linkModal) {
+        const closeLinkModal = () => linkModal.classList.remove('visible');
+        linkModal.querySelectorAll('.cancel-btn').forEach(btn => btn.addEventListener('click', closeLinkModal));
+        linkModal.addEventListener('click', e => e.target === linkModal && closeLinkModal());
+
+        copyLinkBtn.addEventListener('click', () => {
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const originalText = copyLinkBtn.innerHTML;
+                copyLinkBtn.innerHTML = 'Copiado!';
+                copyLinkBtn.style.backgroundColor = '#28a745';
+                setTimeout(() => {
+                    copyLinkBtn.innerHTML = originalText;
+                    copyLinkBtn.style.backgroundColor = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+                alert('Erro ao copiar link. Por favor, copie manualmente.');
+            });
+        });
+    }
 
     dashboard.addEventListener('click', async (event) => {
         const target = event.target;

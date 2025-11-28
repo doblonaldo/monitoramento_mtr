@@ -1,0 +1,218 @@
+[
+  {
+    "timestamp": "2025-11-28T17:27:13.123Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:27:09.560Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:27:02.796Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Redefinir Senha",
+    "details": "Usuário redefiniu a senha."
+  },
+  {
+    "timestamp": "2025-11-28T17:26:52.571Z",
+    "username": "admin",
+    "action": "Gerar Link Reset",
+    "details": "Gerou link de reset para douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T17:26:50.486Z",
+    "username": "admin",
+    "action": "Remover Usuário",
+    "details": "Removeu usuário: teste@teste"
+  },
+  {
+    "timestamp": "2025-11-28T17:26:43.254Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:26:39.700Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:24:08.860Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:24:04.276Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:23:46.836Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: douglas.acosta@brphonia.com.br (viewer)"
+  },
+  {
+    "timestamp": "2025-11-28T17:23:10.874Z",
+    "username": "teste@teste",
+    "action": "Redefinir Senha",
+    "details": "Usuário redefiniu a senha."
+  },
+  {
+    "timestamp": "2025-11-28T17:23:01.096Z",
+    "username": "admin",
+    "action": "Gerar Link Reset",
+    "details": "Gerou link de reset para teste@teste"
+  },
+  {
+    "timestamp": "2025-11-28T17:22:54.169Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:22:51.205Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:17:57.400Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: teste@teste (viewer)"
+  },
+  {
+    "timestamp": "2025-11-28T17:17:52.069Z",
+    "username": "admin",
+    "action": "Remover Usuário",
+    "details": "Removeu usuário: douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T17:17:25.774Z",
+    "username": "admin",
+    "action": "Gerar Link Reset",
+    "details": "Gerou link de reset para douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T17:17:05.761Z",
+    "username": "admin",
+    "action": "Atualizar Usuário",
+    "details": "Atualizou usuário: douglas.acosta@brphonia.com.br. Mudanças: senha"
+  },
+  {
+    "timestamp": "2025-11-28T17:16:40.924Z",
+    "username": "admin",
+    "action": "Gerar Link Reset",
+    "details": "Gerou link de reset para douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T17:16:08.698Z",
+    "username": "admin",
+    "action": "Gerar Link Reset",
+    "details": "Gerou link de reset para douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T17:15:59.614Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: douglas.acosta@brphonia.com.br (viewer)"
+  },
+  {
+    "timestamp": "2025-11-28T17:15:45.340Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:11:18.912Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:11:14.888Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:10:59.041Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:10:52.381Z",
+    "username": "admin",
+    "action": "Remover Categoria",
+    "details": "Removeu categoria: Teste"
+  },
+  {
+    "timestamp": "2025-11-28T17:10:44.654Z",
+    "username": "admin",
+    "action": "Adicionar Categoria",
+    "details": "Adicionou categoria: Teste"
+  },
+  {
+    "timestamp": "2025-11-28T17:10:31.048Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:10:27.886Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:09:36.483Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:09:29.105Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:09:18.181Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T17:07:26.785Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T17:07:24.468Z",
+    "username": "admin",
+    "action": "Remover Categoria",
+    "details": "Removeu categoria: Teste"
+  },
+  {
+    "timestamp": "2025-11-28T17:07:18.893Z",
+    "username": "admin",
+    "action": "Adicionar Categoria",
+    "details": "Adicionou categoria: Teste"
+  },
+  {
+    "timestamp": "2025-11-28T17:06:43.978Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  }
+]

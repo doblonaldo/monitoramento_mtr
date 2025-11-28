@@ -127,6 +127,30 @@
         </div>
     </div>
 
+    <div id="system-logs-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 900px;">
+            <h2>Logs do Sistema</h2>
+            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Usuário</th>
+                            <th>Ação</th>
+                            <th>Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-list-body">
+                        <!-- Logs will be listed here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="edit-user-modal" class="modal-overlay">
         <div class="modal-content">
             <h2>Editar Usuário</h2>
@@ -151,7 +175,26 @@
             </form>
         </div>
     </div>
+
+    <div id="link-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="link-modal-title">Link Gerado</h2>
+            <p>Copie o link abaixo e envie para o usuário:</p>
+            <input type="text" id="generated-link-input" readonly>
+            <div class="modal-actions" style="justify-content: center;">
+                <button id="copy-link-btn" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copiar Link
+                </button>
+                <button type="button" class="cancel-btn" style="background-color: #3a3c5a;">Fechar</button>
+            </div>
+        </div>
     </div>
+
     <footer>
         <span id="status-text">Verificando status do servidor...</span>
     </footer>
