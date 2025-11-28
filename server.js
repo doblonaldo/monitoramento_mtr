@@ -9,6 +9,10 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
 // --- Carregar Variáveis de Ambiente ---
 const envPath = path.join(__dirname, '.env');
@@ -34,18 +38,41 @@ const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
 const MONITORING_INTERVAL = 30 * 1000;
 
-let db = { hosts: {}, categories: [] };
+let db = { hosts: {}, categories: [], users: [] };
 let lastCheckTimestamp = null;
 
 app.use(cors());
 app.use(express.json());
 
 // --- Middleware de Autenticação ---
+// --- Middleware de Autenticação ---
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+};
+
+const authorizeRole = (roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({ message: 'Acesso negado. Permissão insuficiente.' });
+        }
+        next();
+    };
+};
+
+// Deprecated: requireEditorToken (kept for backward compatibility if needed, but we will switch to JWT)
 const requireEditorToken = (req, res, next) => {
-    const token = req.query.editor_token || req.body.editor_token;
-    if (!token || token !== process.env.EDITOR_TOKEN) {
-        return res.status(403).json({ message: 'Acesso negado. Token de edição inválido ou ausente.' });
-    }
+    // For now, we can just pass through or check for legacy token if we want to support both.
+    // But the plan is to move to JWT. Let's redirect legacy usage to 403 or just remove it.
+    // For this implementation, we will replace its usage with authenticateToken + authorizeRole.
     next();
 };
 
@@ -75,11 +102,32 @@ async function loadDatabase() {
             }
         });
 
+        if (!parsedData.users || !Array.isArray(parsedData.users)) {
+            parsedData.users = [];
+        }
+
+        // Create default admin if no users exist
+        if (parsedData.users.length === 0) {
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            parsedData.users.push({
+                username: 'admin',
+                passwordHash: hashedPassword,
+                role: 'admin'
+            });
+            console.log('[DB] Usuário admin padrão criado (admin/admin123).');
+            await saveDatabase(); // Save immediately
+        }
+
         db = parsedData;
         console.log('[DB] Banco de dados carregado com sucesso.');
     } catch (error) {
-        console.log('[DB] Arquivo db.json não encontrado. Criando um novo com a categoria "Geral".');
-        db = { hosts: {}, categories: ['Geral'] };
+        console.log('[DB] Arquivo db.json não encontrado. Criando um novo com a categoria "Geral" e usuário admin.');
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        db = {
+            hosts: {},
+            categories: ['Geral'],
+            users: [{ username: 'admin', passwordHash: hashedPassword, role: 'admin' }]
+        };
         await saveDatabase();
     }
 }
@@ -267,6 +315,75 @@ function startMonitoring() {
 }
 
 // --- Rotas da API ---
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = db.users.find(u => u.username === username);
+    if (!user) {
+        return res.status(401).json({ message: 'Usuário ou senha inválidos.' });
+    }
+    try {
+        if (await bcrypt.compare(password, user.passwordHash)) {
+            const accessToken = jwt.sign({ username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
+            res.json({ accessToken, role: user.role, username: user.username });
+        } else {
+            res.status(401).json({ message: 'Usuário ou senha inválidos.' });
+        }
+    } catch (e) {
+        res.status(500).send();
+    }
+});
+
+app.get('/api/users', authenticateToken, authorizeRole(['admin']), (req, res) => {
+    const usersSafe = db.users.map(u => ({ username: u.username, role: u.role }));
+    res.json(usersSafe);
+});
+
+app.post('/api/users', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+    const { username, password, role } = req.body;
+    if (!username || !password || !role) return res.status(400).json({ message: 'Dados incompletos.' });
+    if (db.users.find(u => u.username === username)) return res.status(409).json({ message: 'Usuário já existe.' });
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        db.users.push({ username, passwordHash: hashedPassword, role });
+        await saveDatabase();
+        res.status(201).json({ message: 'Usuário criado.' });
+    } catch (e) {
+        res.status(500).json({ message: 'Erro ao criar usuário.' });
+    }
+});
+
+app.put('/api/users/:username', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+    const { username } = req.params;
+    const { password, role } = req.body;
+    const user = db.users.find(u => u.username === username);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+
+    if (password) {
+        user.passwordHash = await bcrypt.hash(password, 10);
+    }
+    if (role) {
+        user.role = role;
+    }
+    await saveDatabase();
+    res.json({ message: 'Usuário atualizado.' });
+});
+
+app.delete('/api/users/:username', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+    const { username } = req.params;
+    if (username === 'admin') return res.status(400).json({ message: 'Não é possível remover o admin padrão.' });
+
+    const initialLength = db.users.length;
+    db.users = db.users.filter(u => u.username !== username);
+
+    if (db.users.length < initialLength) {
+        await saveDatabase();
+        res.json({ message: 'Usuário removido.' });
+    } else {
+        res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+});
 app.get('/api/hosts', (req, res) => {
     const hostList = Object.entries(db.hosts).map(([destino, data]) => ({
         destino: destino,
@@ -296,7 +413,7 @@ app.get('/api/status', (req, res) => {
     });
 });
 
-app.post('/api/hosts', requireEditorToken, async (req, res) => {
+app.post('/api/hosts', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
     const { title, destino, category } = req.body;
     const finalCategory = category || 'Geral';
 
@@ -324,7 +441,7 @@ app.post('/api/hosts', requireEditorToken, async (req, res) => {
     res.status(201).json({ message: `Host ${destino} adicionado com sucesso.` });
 });
 
-app.post('/api/categories', requireEditorToken, async (req, res) => {
+app.post('/api/categories', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
     const { name } = req.body;
     if (!name || typeof name !== 'string' || name.trim() === '') {
         return res.status(400).json({ message: 'O nome da categoria é inválido.' });
@@ -339,7 +456,7 @@ app.post('/api/categories', requireEditorToken, async (req, res) => {
     res.status(201).json({ message: `Categoria "${categoryName}" adicionada com sucesso.` });
 });
 
-app.delete('/api/hosts/:host', requireEditorToken, async (req, res) => {
+app.delete('/api/hosts/:host', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
     const hostToRemove = req.params.host;
     if (!db.hosts[hostToRemove]) {
         return res.status(404).json({ message: 'Host não encontrado.' });
@@ -351,7 +468,7 @@ app.delete('/api/hosts/:host', requireEditorToken, async (req, res) => {
     res.status(200).json({ message: `Host ${hostToRemove} removido com sucesso.` });
 });
 
-app.delete('/api/categories/:category', requireEditorToken, async (req, res) => {
+app.delete('/api/categories/:category', authenticateToken, authorizeRole(['editor', 'admin']), async (req, res) => {
     const categoryToRemove = decodeURIComponent(req.params.category);
     if (categoryToRemove === 'Geral') {
         return res.status(400).json({ message: 'A categoria "Geral" não pode ser removida.' });

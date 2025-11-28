@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +8,10 @@
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <button id="sidebar-toggle" title="Alternar menu de categorias">☰</button>
     <aside id="sidebar">
@@ -19,6 +21,8 @@
         <nav id="category-list"></nav>
         <div id="sidebar-editor-actions">
             <button id="add-category-btn">+ Nova Categoria</button>
+            <button id="manage-users-btn" style="display: none;">Gerenciar Usuários</button>
+            <button id="logout-btn" style="background-color: var(--cor-remover); margin-top: 10px;">Sair</button>
         </div>
     </aside>
     <div id="main-content">
@@ -44,7 +48,11 @@
 
     <div class="floating-actions">
         <button id="refresh-btn" class="floating-btn" title="Atualizar dados">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
         </button>
         <button id="add-host-btn" class="floating-btn" title="Adicionar novo destino">+</button>
     </div>
@@ -57,7 +65,7 @@
                 <input type="text" id="new-host-input" placeholder="Digite o IP ou domínio do destino" required>
                 <label for="new-host-category-select">Categoria</label>
                 <select id="new-host-category-select">
-                    </select>
+                </select>
                 <div class="modal-actions">
                     <button type="button" class="cancel-btn">Cancelar</button>
                     <button type="submit">Adicionar</button>
@@ -77,6 +85,29 @@
                 </div>
             </form>
         </div>
+
+        <div id="manage-users-modal" class="modal-overlay">
+            <div class="modal-content" style="max-width: 600px;">
+                <h2>Gerenciar Usuários</h2>
+                <div id="user-list" style="margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                    <!-- Users will be listed here -->
+                </div>
+                <h3>Adicionar Novo Usuário</h3>
+                <form id="add-user-form">
+                    <input type="text" id="new-user-username" placeholder="Usuário" required>
+                    <input type="password" id="new-user-password" placeholder="Senha" required>
+                    <select id="new-user-role">
+                        <option value="viewer">Visualizador</option>
+                        <option value="editor">Editor</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <div class="modal-actions">
+                        <button type="button" class="cancel-btn">Fechar</button>
+                        <button type="submit">Criar Usuário</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     <footer>
         <span id="status-text">Verificando status do servidor...</span>
@@ -85,4 +116,5 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

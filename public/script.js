@@ -3,16 +3,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const charts = {};
     const API_URL = '/api';
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const editorToken = urlParams.get('editor_token');
-    const isEditorMode = !!editorToken;
+    const accessToken = localStorage.getItem('accessToken');
+    const userRole = localStorage.getItem('userRole');
+    const username = localStorage.getItem('username');
+
+    if (!accessToken) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    const isEditor = userRole === 'editor' || userRole === 'admin';
+    const isAdmin = userRole === 'admin';
+
+    // Auth Header Helper
+    const authHeaders = { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+    const authHeadersGet = { 'Authorization': `Bearer ${accessToken}` };
 
     let allHostsData = []; // Cache para todos os hosts, para evitar fetches repetidos
     let currentCategory = 'Todos'; // Categoria selecionada atualmente
 
     const startDatePicker = flatpickr("#start-date", { enableTime: true, dateFormat: "Y-m-d H:i", time_24hr: true });
     const endDatePicker = flatpickr("#end-date", { enableTime: true, dateFormat: "Y-m-d H:i", time_24hr: true });
-    
+
     // --- INÍCIO DA ALTERAÇÃO: Lógica da Sidebar e Categorias ---
 
     const sidebar = document.getElementById('sidebar');
@@ -25,9 +37,79 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('sidebar-collapsed');
     });
 
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.clear();
+        window.location.href = '/login.html';
+    });
+
+    if (isAdmin) {
+        const manageUsersBtn = document.getElementById('manage-users-btn');
+        manageUsersBtn.style.display = 'block';
+
+        const { modal, form, closeModal } = setupModal('manage-users-modal', 'manage-users-btn', 'add-user-form');
+        const userList = document.getElementById('user-list');
+
+        manageUsersBtn.addEventListener('click', async () => {
+            await loadUsers();
+            modal.classList.add('visible');
+        });
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_URL}/users`, { headers: authHeadersGet });
+                if (!res.ok) throw new Error('Falha ao carregar usuários');
+                const users = await res.json();
+                userList.innerHTML = users.map(u => `
+                    <div style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #444;">
+                        <span>${u.username} (${u.role})</span>
+                        ${u.username !== 'admin' ? `<button class="delete-user-btn" data-username="${u.username}" style="background: var(--cor-remover); padding: 2px 5px;">Excluir</button>` : ''}
+                    </div>
+                `).join('');
+
+                document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        if (confirm(`Remover usuário ${e.target.dataset.username}?`)) {
+                            await deleteUser(e.target.dataset.username);
+                        }
+                    });
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteUser(username) {
+            try {
+                const res = await fetch(`${API_URL}/users/${username}`, { method: 'DELETE', headers: authHeadersGet });
+                if (res.ok) loadUsers();
+                else alert('Erro ao remover usuário');
+            } catch (e) { alert('Erro ao remover usuário'); }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('new-user-username').value;
+            const password = document.getElementById('new-user-password').value;
+            const role = document.getElementById('new-user-role').value;
+
+            try {
+                const res = await fetch(`${API_URL}/users`, {
+                    method: 'POST',
+                    headers: authHeaders,
+                    body: JSON.stringify({ username, password, role })
+                });
+                if (res.ok) {
+                    form.reset();
+                    loadUsers();
+                } else {
+                    const data = await res.json();
+                    alert(data.message);
+                }
+            } catch (e) { alert('Erro ao criar usuário'); }
+        });
+    }
+
     async function loadCategories() {
         try {
-            const response = await fetch(`${API_URL}/categories`);
+            const response = await fetch(`${API_URL}/categories`, { headers: authHeadersGet });
             if (!response.ok) throw new Error('Falha ao carregar categorias.');
             const categories = await response.json();
 
@@ -40,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Adiciona outras categorias
             categories.forEach(cat => categoryList.appendChild(createCategoryItem(cat)));
 
-            if (isEditorMode) {
+            if (isEditor) {
                 sidebarEditorActions.style.display = 'block';
             }
         } catch (error) {
@@ -54,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         item.dataset.category = categoryName;
         item.textContent = categoryName;
 
-        if (isEditorMode && categoryName !== 'Geral' && categoryName !== 'Todos') {
+        if (isEditor && categoryName !== 'Geral' && categoryName !== 'Todos') {
             const removeBtn = document.createElement('span');
             removeBtn.className = 'remove-category-btn';
             removeBtn.innerHTML = '&times;';
@@ -64,17 +146,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return item;
     }
-    
+
     categoryList.addEventListener('click', async (event) => {
         const target = event.target;
-        
+
         if (target.classList.contains('remove-category-btn')) {
             event.stopPropagation(); // Impede que o clique ative a filtragem
             const categoryItem = target.closest('.category-item');
             const categoryToRemove = categoryItem.dataset.category;
             if (confirm(`Tem certeza que deseja remover a categoria "${categoryToRemove}"?\nTodos os hosts nesta categoria serão movidos para "Geral".`)) {
                 try {
-                    const response = await fetch(`${API_URL}/categories/${categoryToRemove}?editor_token=${editorToken}`, { method: 'DELETE' });
+                    const response = await fetch(`${API_URL}/categories/${categoryToRemove}`, { method: 'DELETE', headers: authHeadersGet });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message);
                     await refreshAllData();
@@ -96,14 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function filterAndRenderHosts() {
         dashboard.innerHTML = ''; // Limpa o dashboard antes de renderizar
-        const hostsToRender = currentCategory === 'Todos' 
-            ? allHostsData 
+        const hostsToRender = currentCategory === 'Todos'
+            ? allHostsData
             : allHostsData.filter(host => host.category === currentCategory);
-        
+
         hostsToRender.forEach(hostInfo => renderHostCard(hostInfo));
         updateAllTimelines();
     }
-    
+
     // --- FIM DA ALTERAÇÃO: Lógica da Sidebar e Categorias ---
 
 
@@ -119,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.dataset.host = destino;
         card.dataset.category = category; // Armazena a categoria no card
 
-        const removeButtonHTML = isEditorMode ? `<button class="remove-host-btn" title="Remover host">&times;</button>` : '';
+        const removeButtonHTML = isEditor ? `<button class="remove-host-btn" title="Remover host">&times;</button>` : '';
 
         card.innerHTML = `
             <div class="host-header">
@@ -198,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchHostData(hostDestino, startDate, endDate) {
         try {
-            const response = await fetch(`${API_URL}/hosts/${hostDestino}`);
+            const response = await fetch(`${API_URL}/hosts/${hostDestino}`, { headers: authHeadersGet });
             if (!response.ok) throw new Error('Falha ao buscar dados do host.');
             const data = await response.json();
 
@@ -223,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ALTERAÇÃO: Função agora busca todos os hosts e armazena em cache
     async function loadInitialHosts() {
         try {
-            const response = await fetch(`${API_URL}/hosts`);
+            const response = await fetch(`${API_URL}/hosts`, { headers: authHeadersGet });
             if (!response.ok) throw new Error('Falha ao carregar hosts.');
             allHostsData = await response.json();
             filterAndRenderHosts();
@@ -236,11 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateStatusFooter() {
         const statusText = document.getElementById('status-text');
         try {
-            const response = await fetch(`${API_URL}/status`);
+            const response = await fetch(`${API_URL}/status`, { headers: authHeadersGet });
             if (!response.ok) throw new Error('Falha ao buscar status.');
             const data = await response.json();
             statusText.textContent = data.lastCheck ? `Última verificação do servidor: ${new Date(data.lastCheck).toLocaleString('pt-BR')}` : 'Servidor online. Aguardando o primeiro ciclo de verificação.';
-            if (isEditorMode) { statusText.textContent += ' | Modo de Edição Ativado'; }
+            if (isEditor) { statusText.textContent += ' | Modo de Edição Ativado'; }
         } catch (error) {
             statusText.textContent = 'Não foi possível conectar ao servidor de monitoramento.';
         }
@@ -294,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => refreshBtn.classList.remove('loading'), 500);
     }
     refreshBtn.addEventListener('click', refreshAllData);
-    
+
     // --- INÍCIO DA ALTERAÇÃO: Lógica dos Modais de Adição ---
 
     // Função genérica para controlar modais
@@ -315,13 +397,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Modal de Adicionar Host
-    if (isEditorMode) {
+    if (isEditor) {
         const { modal, form, closeModal } = setupModal('add-host-modal', 'add-host-btn', 'add-host-form');
         const categorySelect = document.getElementById('new-host-category-select');
 
         document.getElementById('add-host-btn').addEventListener('click', async () => {
             // Preenche o select de categorias ao abrir o modal
-            const res = await fetch(`${API_URL}/categories`);
+            const res = await fetch(`${API_URL}/categories`, { headers: authHeadersGet });
             const categories = await res.json();
             categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             modal.classList.add('visible');
@@ -335,9 +417,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (newHostDestino) {
                 try {
-                    const response = await fetch(`${API_URL}/hosts?editor_token=${editorToken}`, {
+                    const response = await fetch(`${API_URL}/hosts`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: authHeaders,
                         body: JSON.stringify({ title: newHostTitle, destino: newHostDestino, category: newHostCategory })
                     });
                     const result = await response.json();
@@ -352,16 +434,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Modal de Adicionar Categoria
-    if (isEditorMode) {
+    if (isEditor) {
         const { form, closeModal } = setupModal('add-category-modal', 'add-category-btn', 'add-category-form');
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             const newCategoryName = document.getElementById('new-category-name-input').value.trim();
             if (newCategoryName) {
                 try {
-                    const response = await fetch(`${API_URL}/categories?editor_token=${editorToken}`, {
+                    const response = await fetch(`${API_URL}/categories`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: authHeaders,
                         body: JSON.stringify({ name: newCategoryName })
                     });
                     const result = await response.json();
@@ -389,11 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (target.classList.contains('live-btn')) {
             mtrOutputPre.textContent = hostCard.dataset.lastMtr || 'Carregando...';
             liveBtn.classList.add('active');
-        } else if (target.classList.contains('remove-host-btn') && isEditorMode) {
+        } else if (target.classList.contains('remove-host-btn') && isEditor) {
             const hostToRemove = hostCard.dataset.host;
             if (confirm(`Tem certeza que deseja remover "${hostToRemove}"?`)) {
                 try {
-                    const response = await fetch(`${API_URL}/hosts/${hostToRemove}?editor_token=${editorToken}`, { method: 'DELETE' });
+                    const response = await fetch(`${API_URL}/hosts/${hostToRemove}`, { method: 'DELETE', headers: authHeadersGet });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message);
                     await refreshAllData(); // Recarrega para refletir a remoção

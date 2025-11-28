@@ -1,4 +1,3 @@
-destino: google.com\n1.1.1.1
 destino: 200.198.128.227
 destino: detran.rs.gov.br
 destino: 142.250.218.65
@@ -192,4 +191,3 @@ destino: 170.144.52.2
 destino: zoom.us
 destino: 51.123.128.14
 destino: teams.microsoft.com
-title: Google, destino: 8.8.8.8, category: Jogos
