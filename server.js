@@ -142,10 +142,10 @@ async function loadDatabase() {
                     delete user.passwordHash;
                 }
             });
+            db = parsedData; // Assign BEFORE saving to ensure we save the loaded data, not the empty initial db
             await saveDatabase(); // Save migration changes
         }
 
-        db = parsedData;
         console.log('[DB] Banco de dados carregado com sucesso.');
     } catch (error) {
         if (error.code === 'ENOENT') {

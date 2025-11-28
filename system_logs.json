@@ -1,5 +1,65 @@
 [
   {
+    "timestamp": "2025-11-28T18:53:26.122Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T18:53:22.441Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:53:14.434Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T18:53:11.831Z",
+    "username": "admin",
+    "action": "Atualizar Usuário",
+    "details": "Atualizou usuário: admin. Mudanças: senha"
+  },
+  {
+    "timestamp": "2025-11-28T18:53:03.611Z",
+    "username": "admin",
+    "action": "Remover Usuário",
+    "details": "Removeu usuário: douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T18:52:53.845Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:51:59.775Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T18:51:57.602Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T18:51:37.963Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: douglas.acosta@brphonia.com.br (viewer)"
+  },
+  {
+    "timestamp": "2025-11-28T18:51:30.795Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
     "timestamp": "2025-11-28T18:20:10.547Z",
     "username": "admin",
     "action": "Remover Usuário",
