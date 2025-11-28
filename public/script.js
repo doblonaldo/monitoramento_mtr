@@ -544,19 +544,37 @@ document.addEventListener('DOMContentLoaded', () => {
             const newHostTitle = document.getElementById('new-host-title-input').value.trim();
             const newHostDestino = document.getElementById('new-host-input').value.trim();
             const newHostCategory = categorySelect.value;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
 
             if (newHostDestino) {
                 try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Adicionando...';
+
                     const response = await fetch(`${API_URL}/hosts`, {
                         method: 'POST',
                         headers: authHeaders,
                         body: JSON.stringify({ title: newHostTitle, destino: newHostDestino, category: newHostCategory })
                     });
                     const result = await response.json();
-                    if (!response.ok) throw new Error(result.message);
+
+                    if (!response.ok) {
+                        if (response.status === 409) {
+                            throw new Error('Este host já está sendo monitorado.');
+                        }
+                        throw new Error(result.message);
+                    }
+
+                    alert('Host adicionado com sucesso!');
                     closeModal();
                     await refreshAllData();
-                } catch (error) { alert(`Erro: ${error.message}`); }
+                } catch (error) {
+                    alert(`Erro: ${error.message}`);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                }
             }
         });
     } else {

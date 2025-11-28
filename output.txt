@@ -1,6 +1,0 @@
-[dotenv@17.2.1] injecting env (5) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
-Testing email...
-Host: mail.brphonia.com.br
-Port: 587
-User: ti@brphonia.com.br
-Email sent: <1b2e863b-f498-ac11-82f5-99acd5dbf175@example.com>

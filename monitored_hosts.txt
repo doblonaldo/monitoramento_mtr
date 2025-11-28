@@ -190,3 +190,4 @@ destino: 51.123.128.14
 destino: teams.microsoft.com
 title: MK, destino: mk.brphonia.com.br
 title: MK, destino: mk.brphonia.com.br
+destino: www.youtube.com
