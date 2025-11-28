@@ -1,5 +1,35 @@
 [
   {
+    "timestamp": "2025-11-28T19:05:26.333Z",
+    "username": "admin",
+    "action": "Remover Usuário",
+    "details": "Removeu usuário: douglas.acosta@brphonia.com.br"
+  },
+  {
+    "timestamp": "2025-11-28T19:04:55.673Z",
+    "username": "douglas.acosta@brphonia.com.br",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
+    "timestamp": "2025-11-28T19:04:28.432Z",
+    "username": "admin",
+    "action": "Convidar Usuário",
+    "details": "Convidou usuário: douglas.acosta@brphonia.com.br (admin)"
+  },
+  {
+    "timestamp": "2025-11-28T19:02:49.012Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Usuário realizou logout."
+  },
+  {
+    "timestamp": "2025-11-28T19:02:40.938Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Usuário realizou login."
+  },
+  {
     "timestamp": "2025-11-28T18:53:26.122Z",
     "username": "admin",
     "action": "Logout",

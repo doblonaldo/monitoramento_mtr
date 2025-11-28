@@ -78,6 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadLogs();
         });
 
+        document.getElementById('refresh-logs-btn').addEventListener('click', async () => {
+            await loadLogs();
+        });
+
         async function loadLogs() {
             try {
                 const res = await fetch(`${API_URL}/logs`, { headers: authHeadersGet });
