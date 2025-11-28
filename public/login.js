@@ -29,48 +29,4 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
 });
 
-const forgotPasswordLink = document.getElementById('forgot-password-link');
-const forgotPasswordModal = document.getElementById('forgot-password-modal');
-const forgotPasswordForm = document.getElementById('forgot-password-form');
-const cancelBtn = forgotPasswordModal.querySelector('.cancel-btn');
 
-if (forgotPasswordLink && forgotPasswordModal) {
-    forgotPasswordLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        forgotPasswordModal.classList.add('visible');
-    });
-
-    const closeModal = () => forgotPasswordModal.classList.remove('visible');
-    cancelBtn.addEventListener('click', closeModal);
-    forgotPasswordModal.addEventListener('click', (e) => {
-        if (e.target === forgotPasswordModal) closeModal();
-    });
-
-    forgotPasswordForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('forgot-email').value;
-        if (email) {
-            try {
-                const res = await fetch('/api/auth/forgot-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    closeModal();
-                    if (data.preview) {
-                        alert(`Email enviado! (Modo Teste)\nLink: ${data.preview}`);
-                        window.open(data.preview, '_blank');
-                    } else {
-                        alert(data.message);
-                    }
-                } else {
-                    alert(data.message);
-                }
-            } catch (error) {
-                alert('Erro ao solicitar recuperação de senha.');
-            }
-        }
-    });
-}

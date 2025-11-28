@@ -11,7 +11,7 @@ const fs = require('fs').promises;
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+// const nodemailer = require('nodemailer'); // Removed as per request
 
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(64).toString('hex');
 
@@ -39,26 +39,8 @@ const HOST_LIST_FILE = path.join(__dirname, 'hosts.txt');
 const MONITORED_HOSTS_FILE = path.join(__dirname, 'monitored_hosts.txt');
 const MONITORING_INTERVAL = 30 * 1000;
 
-// Configuração de Email (Nodemailer)
-// Em produção, use variáveis de ambiente para estas credenciais
-console.log('[Email Config] Host:', process.env.SMTP_HOST || 'smtp.ethereal.email');
-console.log('[Email Config] Port:', process.env.SMTP_PORT || 587);
-console.log('[Email Config] User:', process.env.SMTP_USER || 'ethereal_user');
-
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: process.env.SMTP_PORT || 587,
-    secure: (process.env.SMTP_PORT == 465), // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER || 'ethereal_user',
-        pass: process.env.SMTP_PASS || 'ethereal_pass'
-    },
-    tls: {
-        rejectUnauthorized: false // Allow self-signed certs
-    },
-    logger: true,
-    debug: true
-});
+// Email configuration removed.
+// const transporter = ...
 
 let db = { hosts: {}, categories: [], users: [] };
 let lastCheckTimestamp = null;
@@ -384,26 +366,15 @@ app.post('/api/users/invite', authenticateToken, authorizeRole(['admin']), async
     db.users.push(newUser);
     await saveDatabase();
 
-    // Send Email
+    // Send Email - REMOVED
+    // Instead, return the link directly
     const inviteLink = `http://${req.headers.host}/setup-password.html?token=${inviteToken}`;
-    const mailOptions = {
-        from: '"Monitoramento MTR" <noreply@monitoramento.com>',
-        to: email,
-        subject: 'Convite para acessar o Monitoramento MTR',
-        text: `Você foi convidado para acessar o sistema. Clique no link para definir sua senha: ${inviteLink}`,
-        html: `<p>Você foi convidado para acessar o sistema.</p><p>Clique no link para definir sua senha: <a href="${inviteLink}">Definir Senha</a></p>`
-    };
+    console.log(`[Invite] Link generated for ${email}: ${inviteLink}`);
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email enviado: %s', info.messageId);
-        // Preview only available when sending through an Ethereal account
-        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-        res.json({ message: 'Convite enviado com sucesso.', preview: nodemailer.getTestMessageUrl(info) });
-    } catch (error) {
-        console.error('Erro ao enviar email:', error);
-        res.status(500).json({ message: 'Erro ao enviar email de convite.' });
-    }
+    res.json({
+        message: 'Usuário convidado com sucesso. Copie o link abaixo e envie para o usuário:',
+        link: inviteLink
+    });
 });
 
 // 2. Definir Senha (Primeiro Acesso)
@@ -425,10 +396,10 @@ app.post('/api/auth/setup-password', async (req, res) => {
     }
 });
 
-// 3. Esqueci Minha Senha (Solicitar)
-app.post('/api/auth/forgot-password', async (req, res) => {
-    const { email } = req.body;
-    const user = db.users.find(u => u.email === email || u.username === email);
+// 3. Gerar Link de Reset (Admin Only)
+app.post('/api/users/:username/reset-link', authenticateToken, authorizeRole(['admin']), async (req, res) => {
+    const { username } = req.params;
+    const user = db.users.find(u => u.username === username);
 
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
 
@@ -440,23 +411,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     await saveDatabase();
 
     const resetLink = `http://${req.headers.host}/reset-password.html?token=${resetToken}`;
-    const mailOptions = {
-        from: '"Monitoramento MTR" <noreply@monitoramento.com>',
-        to: user.email || user.username, // Fallback to username if email not set (legacy)
-        subject: 'Recuperação de Senha',
-        text: `Você solicitou a recuperação de senha. Clique no link para redefinir: ${resetLink}`,
-        html: `<p>Você solicitou a recuperação de senha.</p><p>Clique no link para redefinir: <a href="${resetLink}">Redefinir Senha</a></p>`
-    };
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email de reset enviado: %s', info.messageId);
-        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-        res.json({ message: 'Email de recuperação enviado.', preview: nodemailer.getTestMessageUrl(info) });
-    } catch (error) {
-        console.error('Erro ao enviar email:', error);
-        res.status(500).json({ message: 'Erro ao enviar email.' });
-    }
+    console.log(`[Reset] Link generated for ${user.username}: ${resetLink}`);
+
+    res.json({
+        message: 'Link de redefinição gerado com sucesso.',
+        link: resetLink
+    });
 });
 
 // 4. Redefinir Senha (Com Token)

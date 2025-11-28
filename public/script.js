@@ -69,9 +69,32 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td class="user-actions">
                             <button class="edit-user-btn" data-username="${u.username}" data-role="${u.role}">Editar</button>
                             ${u.username !== 'admin' ? `<button class="delete-user-btn" data-username="${u.username}">Excluir</button>` : ''}
+                            <button class="reset-password-btn" style="background-color: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;" data-username="${u.username}">Gerar Link Senha</button>
                         </td>
                     </tr>
                 `).join('');
+
+                window.generateResetLink = async (username) => {
+                    if (!confirm(`Gerar link de redefinição de senha para ${username}?`)) return;
+
+                    try {
+                        const token = localStorage.getItem('accessToken');
+                        const res = await fetch(`/api/users/${username}/reset-link`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const data = await res.json();
+
+                        if (res.ok) {
+                            prompt(`Link gerado com sucesso!\nCopie o link abaixo e envie para o usuário:`, data.link);
+                        } else {
+                            alert(data.message);
+                        }
+                    } catch (error) {
+                        console.error('Erro:', error);
+                        alert('Erro ao gerar link.');
+                    }
+                };
 
                 // Attach event listeners
                 document.querySelectorAll('.delete-user-btn').forEach(btn => {
@@ -85,6 +108,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.edit-user-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         openEditUserModal(e.target.dataset.username, e.target.dataset.role);
+                    });
+                });
+
+                document.querySelectorAll('.reset-password-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        window.generateResetLink(e.target.dataset.username);
                     });
                 });
 
@@ -144,15 +173,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({ email, role })
                 });
                 const data = await res.json();
+
                 if (res.ok) {
                     form.reset();
-                    loadUsers();
-                    if (data.preview) {
-                        alert(`Convite enviado! (Modo Teste)\nLink: ${data.preview}`);
-                        window.open(data.preview, '_blank');
+
+                    if (data.link) {
+                        // Always show the link for manual copying
+                        prompt(`Usuário convidado com sucesso!\nCopie o link abaixo e envie para o usuário:`, data.link);
                     } else {
                         alert(data.message);
                     }
+
+                    modal.classList.remove('visible');
+                    loadUsers();
                 } else {
                     alert(data.message);
                 }

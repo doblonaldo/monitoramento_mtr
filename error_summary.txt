@@ -1,0 +1,7 @@
+--- Last 20 Errors ---
+[2025-11-28 14:26:19] DEBUG [UUdtEWv1Obg] S: 535 Authentication failed
+[2025-11-28 14:26:19] INFO  [UUdtEWv1Obg] User "ethereal_user" failed to authenticate
+[2025-11-28 14:26:19] ERROR Send Error: Invalid login: 535 Authentication failed
+Erro ao enviar email: Error: Invalid login: 535 Authentication failed
+    at SMTPConnection._formatError (/home/douglas/Documentos/Projetos/monitoramento_mtr/node_modules/nodemailer/lib/smtp-connection/index.js:809:19)
+  response: '535 Authentication failed',

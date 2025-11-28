@@ -1,0 +1,76 @@
+[dotenv@17.2.1] injecting env (5) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+--- Email Debug Start ---
+Host: mail.brphonia.com.br
+Port: 465
+User: ti@brphonia.com.br
+Secure: undefined
+Pass Length: 18
+[2025-11-28 14:47:04] DEBUG Creating transport: nodemailer (7.0.11; +https://nodemailer.com/; SMTP/7.0.11[client:7.0.11])
+Attempting to verify connection...
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] Resolved mail.brphonia.com.br as 186.209.139.200 [cache miss]
+[2025-11-28 14:47:04] INFO  [ia4R5MptGV0] Secure connection established to 186.209.139.200:465
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 220-cpanel01.staybox.com.br ESMTP Exim 4.98.1 #2 Fri, 28 Nov 2025 11:47:04 -0300 
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 220-We do not authorize the use of this system to transport unsolicited, 
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 220 and/or bulk e-mail.
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] C: EHLO [127.0.0.1]
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-cpanel01.staybox.com.br Hello megane.brphonia.com.br [177.74.144.138]
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-SIZE 52428800
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-LIMITS MAILMAX=1000 RCPTMAX=50000
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-8BITMIME
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-PIPELINING
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-PIPECONNECT
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250-AUTH PLAIN LOGIN
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 250 HELP
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] SMTP handshake finished
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] C: AUTH PLAIN AHRpQGJycGhvbmlhLmNvbS5icgAvKiBzZWNyZXQgKi8=
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 235 Authentication succeeded
+[2025-11-28 14:47:04] INFO  [ia4R5MptGV0] User "ti@brphonia.com.br" authenticated
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] C: QUIT
+Connection Verified Successfully!
+Attempting to send mail...
+[2025-11-28 14:47:04] DEBUG Sending mail using SMTP/7.0.11[client:7.0.11]
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Resolved mail.brphonia.com.br as 186.209.139.200 [cache hit]
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] S: 221 cpanel01.staybox.com.br closing connection
+[2025-11-28 14:47:04] DEBUG [ia4R5MptGV0] Closing connection to the server using "end"
+[2025-11-28 14:47:04] INFO  [ia4R5MptGV0] Connection closed
+[2025-11-28 14:47:04] INFO  [PhyC0e5rvcE] Secure connection established to 186.209.139.200:465
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 220-cpanel01.staybox.com.br ESMTP Exim 4.98.1 #2 Fri, 28 Nov 2025 11:47:04 -0300 
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 220-We do not authorize the use of this system to transport unsolicited, 
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 220 and/or bulk e-mail.
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] C: EHLO [127.0.0.1]
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-cpanel01.staybox.com.br Hello megane.brphonia.com.br [177.74.144.138]
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-SIZE 52428800
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-LIMITS MAILMAX=1000 RCPTMAX=50000
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-8BITMIME
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-PIPELINING
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-PIPECONNECT
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250-AUTH PLAIN LOGIN
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250 HELP
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] SMTP handshake finished
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] C: AUTH PLAIN AHRpQGJycGhvbmlhLmNvbS5icgAvKiBzZWNyZXQgKi8=
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 235 Authentication succeeded
+[2025-11-28 14:47:04] INFO  [PhyC0e5rvcE] User "ti@brphonia.com.br" authenticated
+[2025-11-28 14:47:04] INFO  Sending message <bcd4a4de-bfad-c576-579f-677d7b78f187@brphonia.com.br> to <ti@brphonia.com.br>
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] C: MAIL FROM:<ti@brphonia.com.br>
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250 OK
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] C: RCPT TO:<ti@brphonia.com.br>
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250 Accepted
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] C: DATA
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 354 Enter message, ending with "." on a line by itself
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] From: Test <ti@brphonia.com.br>
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] To: ti@brphonia.com.br
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Subject: Test Email - Debug
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Message-ID: <bcd4a4de-bfad-c576-579f-677d7b78f187@brphonia.com.br>
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Content-Transfer-Encoding: 7bit
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Date: Fri, 28 Nov 2025 14:47:04 +0000
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] MIME-Version: 1.0
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Content-Type: text/plain; charset=utf-8
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] 
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] If you receive this, the configuration is correct.
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] .
+[2025-11-28 14:47:04] INFO  [PhyC0e5rvcE] <343 bytes encoded mime message (source size 340 bytes)>
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] S: 250 OK id=1vOzkY-00000006epM-0otk
+[2025-11-28 14:47:04] DEBUG [PhyC0e5rvcE] Closing connection to the server using "end"
+Email sent successfully: <bcd4a4de-bfad-c576-579f-677d7b78f187@brphonia.com.br>
+--- Email Debug End ---
+[2025-11-28 14:47:04] INFO  [PhyC0e5rvcE] Connection closed
