@@ -19,6 +19,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const authHeaders = { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
     const authHeadersGet = { 'Authorization': `Bearer ${accessToken}` };
 
+    // Helper para Fetch Seguro (Redireciona para login se 401/403)
+    async function safeFetch(url, options = {}) {
+        try {
+            const response = await fetch(url, options);
+            if (response.status === 401 || response.status === 403) {
+                console.warn('Sessão expirada ou inválida. Redirecionando para login...');
+                localStorage.clear();
+                window.location.href = '/login.html';
+                return null; // Interrompe o fluxo
+            }
+            return response;
+        } catch (error) {
+            console.error('Erro de rede:', error);
+            throw error;
+        }
+    }
+
     let allHostsData = []; // Cache para todos os hosts, para evitar fetches repetidos
     let currentCategory = 'Todos'; // Categoria selecionada atualmente
 
@@ -39,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
         try {
-            await fetch('/api/logout', { method: 'POST', headers: authHeadersGet });
+            await safeFetch('/api/logout', { method: 'POST', headers: authHeadersGet });
         } catch (e) {
             console.error('Erro ao registrar logout:', e);
         }
@@ -84,7 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function loadLogs() {
             try {
-                const res = await fetch(`${API_URL}/logs`, { headers: authHeadersGet });
+                const res = await safeFetch(`${API_URL}/logs`, { headers: authHeadersGet });
+                if (!res) return;
                 if (!res.ok) throw new Error('Falha ao carregar logs');
                 const logs = await res.json();
 
@@ -104,7 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function loadUsers() {
             try {
-                const res = await fetch(`${API_URL}/users`, { headers: authHeadersGet });
+                const res = await safeFetch(`${API_URL}/users`, { headers: authHeadersGet });
+                if (!res) return;
                 if (!res.ok) throw new Error('Falha ao carregar usuários');
                 const users = await res.json();
 
@@ -126,10 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     try {
                         const token = localStorage.getItem('accessToken');
-                        const res = await fetch(`/api/users/${username}/reset-link`, {
+                        const res = await safeFetch(`/api/users/${username}/reset-link`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
+                        if (!res) return;
                         const data = await res.json();
 
                         if (res.ok) {
@@ -185,11 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (password) body.password = password;
 
             try {
-                const res = await fetch(`${API_URL}/users/${username}`, {
+                const res = await safeFetch(`${API_URL}/users/${username}`, {
                     method: 'PUT',
                     headers: authHeaders,
                     body: JSON.stringify(body)
                 });
+                if (!res) return;
                 if (res.ok) {
                     closeEditModal();
                     loadUsers();
@@ -202,7 +223,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function deleteUser(username) {
             try {
-                const res = await fetch(`${API_URL}/users/${username}`, { method: 'DELETE', headers: authHeadersGet });
+                const res = await safeFetch(`${API_URL}/users/${username}`, { method: 'DELETE', headers: authHeadersGet });
+                if (!res) return;
                 if (res.ok) loadUsers();
                 else alert('Erro ao remover usuário');
             } catch (e) { alert('Erro ao remover usuário'); }
@@ -214,11 +236,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const role = document.getElementById('invite-user-role').value;
 
             try {
-                const res = await fetch(`${API_URL}/users/invite`, {
+                const res = await safeFetch(`${API_URL}/users/invite`, {
                     method: 'POST',
                     headers: authHeaders,
                     body: JSON.stringify({ email, role })
                 });
+                if (!res) return;
                 const data = await res.json();
 
                 if (res.ok) {
@@ -241,7 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadCategories() {
         try {
-            const response = await fetch(`${API_URL}/categories`, { headers: authHeadersGet });
+            const response = await safeFetch(`${API_URL}/categories`, { headers: authHeadersGet });
+            if (!response) return;
             if (!response.ok) throw new Error('Falha ao carregar categorias.');
             const categories = await response.json();
 
@@ -288,7 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoryToRemove = categoryItem.dataset.category;
             if (confirm(`Tem certeza que deseja remover a categoria "${categoryToRemove}"?\nTodos os hosts nesta categoria serão movidos para "Geral".`)) {
                 try {
-                    const response = await fetch(`${API_URL}/categories/${categoryToRemove}`, { method: 'DELETE', headers: authHeadersGet });
+                    const response = await safeFetch(`${API_URL}/categories/${categoryToRemove}`, { method: 'DELETE', headers: authHeadersGet });
+                    if (!response) return;
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message);
                     await refreshAllData();
@@ -414,7 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchHostData(hostDestino, startDate, endDate) {
         try {
-            const response = await fetch(`${API_URL}/hosts/${hostDestino}`, { headers: authHeadersGet });
+            const response = await safeFetch(`${API_URL}/hosts/${hostDestino}`, { headers: authHeadersGet });
+            if (!response) return;
             if (!response.ok) throw new Error('Falha ao buscar dados do host.');
             const data = await response.json();
 
@@ -439,9 +465,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ALTERAÇÃO: Função agora busca todos os hosts e armazena em cache
     async function loadInitialHosts() {
         try {
-            const response = await fetch(`${API_URL}/hosts`, { headers: authHeadersGet });
+            const response = await safeFetch(`${API_URL}/hosts`, { headers: authHeadersGet });
+            if (!response) return;
             if (!response.ok) throw new Error('Falha ao carregar hosts.');
-            allHostsData = await response.json();
+            const allHostsData = await response.json();
             filterAndRenderHosts();
         } catch (error) {
             console.error('Erro ao carregar hosts:', error);
@@ -452,7 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateStatusFooter() {
         const statusText = document.getElementById('status-text');
         try {
-            const response = await fetch(`${API_URL}/status`, { headers: authHeadersGet });
+            const response = await safeFetch(`${API_URL}/status`, { headers: authHeadersGet });
+            if (!response) return;
             if (!response.ok) throw new Error('Falha ao buscar status.');
             const data = await response.json();
             statusText.textContent = data.lastCheck ? `Última verificação do servidor: ${new Date(data.lastCheck).toLocaleString('pt-BR')}` : 'Servidor online. Aguardando o primeiro ciclo de verificação.';
@@ -537,7 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('add-host-btn').addEventListener('click', async () => {
             // Preenche o select de categorias ao abrir o modal
-            const res = await fetch(`${API_URL}/categories`, { headers: authHeadersGet });
+            const res = await safeFetch(`${API_URL}/categories`, { headers: authHeadersGet });
+            if (!res) return;
             const categories = await res.json();
             categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             modal.classList.add('visible');
@@ -556,11 +585,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     submitBtn.disabled = true;
                     submitBtn.textContent = 'Adicionando...';
 
-                    const response = await fetch(`${API_URL}/hosts`, {
+                    submitBtn.textContent = 'Adicionando...';
+
+                    const response = await safeFetch(`${API_URL}/hosts`, {
                         method: 'POST',
                         headers: authHeaders,
                         body: JSON.stringify({ title: newHostTitle, destino: newHostDestino, category: newHostCategory })
                     });
+                    if (!response) return;
                     const result = await response.json();
 
                     if (!response.ok) {
@@ -593,11 +625,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const newCategoryName = document.getElementById('new-category-name-input').value.trim();
             if (newCategoryName) {
                 try {
-                    const response = await fetch(`${API_URL}/categories`, {
+                    const response = await safeFetch(`${API_URL}/categories`, {
                         method: 'POST',
                         headers: authHeaders,
                         body: JSON.stringify({ name: newCategoryName })
                     });
+                    if (!response) return;
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message);
                     closeModal();
@@ -662,7 +695,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const hostToRemove = hostCard.dataset.host;
             if (confirm(`Tem certeza que deseja remover "${hostToRemove}"?`)) {
                 try {
-                    const response = await fetch(`${API_URL}/hosts/${hostToRemove}`, { method: 'DELETE', headers: authHeadersGet });
+                    const response = await safeFetch(`${API_URL}/hosts/${hostToRemove}`, { method: 'DELETE', headers: authHeadersGet });
+                    if (!response) return;
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message);
                     await refreshAllData(); // Recarrega para refletir a remoção

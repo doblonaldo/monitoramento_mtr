@@ -1,5 +1,11 @@
 [
   {
+    "timestamp": "2025-12-03T12:45:02.004Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Login realizado."
+  },
+  {
     "timestamp": "2025-12-03T12:34:15.136Z",
     "username": "douglas.acosta@brphonia.com.br",
     "action": "Logout",

@@ -85,6 +85,63 @@ async function runTests() {
         console.log(`   Success. Found ${logsRes.body.length} logs.`);
     }
 
+    // 5. Test Role Change Invalidation
+    console.log('5. Testing Role Change Invalidation...');
+
+    // 5a. Create test_editor
+    console.log('   Creating test_editor...');
+    // We need to use a direct DB call or invite flow. Invite flow is complex for script (needs to parse link).
+    // Let's use the invite endpoint but we can't easily set password without parsing the token.
+    // Actually, for this test, let's just use the admin to create a user directly if possible? 
+    // The API only has invite. 
+    // Workaround: Use the invite link token to set password.
+
+    const inviteEditorRes = await request('POST', '/api/users/invite', { email: 'test_editor', role: 'editor' }, ADMIN_TOKEN);
+    let setupToken = '';
+    if (inviteEditorRes.status === 201) {
+        const link = inviteEditorRes.body.link;
+        setupToken = link.split('token=')[1];
+    } else if (inviteEditorRes.status === 409) {
+        // User exists, we need to reset password to get a token? Or just delete and recreate.
+        await request('DELETE', '/api/users/test_editor', null, ADMIN_TOKEN);
+        const retryInvite = await request('POST', '/api/users/invite', { email: 'test_editor', role: 'editor' }, ADMIN_TOKEN);
+        setupToken = retryInvite.body.link.split('token=')[1];
+    }
+
+    // 5b. Set password
+    await request('POST', '/api/auth/setup-password', { token: setupToken, password: 'password123' });
+
+    // 5c. Login as test_editor
+    const loginEditorRes = await request('POST', '/api/login', { username: 'test_editor', password: 'password123' });
+    const EDITOR_TOKEN = loginEditorRes.body.accessToken;
+    console.log('   Logged in as test_editor.');
+
+    // 5d. Verify Editor Access (Add Host)
+    const addHostRes = await request('POST', '/api/hosts', { destino: '8.8.4.4', title: 'Google DNS 2' }, EDITOR_TOKEN);
+    if (addHostRes.status !== 201 && addHostRes.status !== 409) {
+        console.error('   Failed to add host as editor:', addHostRes.status);
+    } else {
+        console.log('   Editor access confirmed.');
+    }
+
+    // 5e. Change Role to Viewer
+    console.log('   Changing role to viewer...');
+    await request('PUT', '/api/users/test_editor', { role: 'viewer' }, ADMIN_TOKEN);
+
+    // 5f. Try Editor Action again (Add Host) - Should Fail
+    console.log('   Retrying editor action...');
+    const retryAddHostRes = await request('POST', '/api/hosts', { destino: '1.0.0.1', title: 'Cloudflare DNS 2' }, EDITOR_TOKEN);
+
+    if (retryAddHostRes.status === 403) {
+        console.log('   Success! Token invalidated (403 Forbidden).');
+    } else {
+        console.error(`   Failure! Expected 403, got ${retryAddHostRes.status}`);
+    }
+
+    // Cleanup
+    await request('DELETE', '/api/users/test_editor', null, ADMIN_TOKEN);
+    await request('DELETE', '/api/hosts/8.8.4.4', null, ADMIN_TOKEN); // Clean up host if added
+
     console.log('--- Verification Complete ---');
 }
 
