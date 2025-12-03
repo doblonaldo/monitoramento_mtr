@@ -9,3 +9,5 @@ node_modules/
 db.json
 hosts.txt
 monitored_hosts.txt
+
+/generated/prisma

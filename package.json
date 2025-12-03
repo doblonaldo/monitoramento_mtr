@@ -19,5 +19,9 @@
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.11",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0"
   }
 }

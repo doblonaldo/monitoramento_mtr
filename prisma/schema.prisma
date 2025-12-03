@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      String   @default("editor") // 'admin', 'editor'
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  hosts Host[]
+}
+
+model Host {
+  id          Int             @id @default(autoincrement())
+  destination String          @unique
+  title       String?
+  categoryId  Int
+  category    Category        @relation(fields: [categoryId], references: [id])
+  status      String          @default("pending") // 'ok', 'failing', 'pending'
+  logs        MonitoringLog[]
+}
+
+model MonitoringLog {
+  id        Int      @id @default(autoincrement())
+  hostId    Int
+  host      Host     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  timestamp DateTime @default(now())
+  output    String
+  isChange  Boolean  @default(false)
+}

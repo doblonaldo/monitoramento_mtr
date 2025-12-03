@@ -22,9 +22,9 @@ Um sistema web completo para monitoramento de latência e perda de pacotes em te
 ## 🛠️ Tecnologias Utilizadas
 
 *   **Backend**: Node.js, Express.
+*   **Banco de Dados**: SQLite (via Prisma ORM).
 *   **Segurança**: Helmet (conceitual), Rate Limit, BCrypt, JWT.
 *   **Frontend**: HTML5, CSS3 (Variáveis CSS, Flexbox/Grid), JavaScript (ES6+).
-*   **Banco de Dados**: JSON (Flat-file database) para simplicidade e portabilidade.
 *   **Ferramentas de Sistema**: `mtr` (Linux).
 
 ## 📋 Pré-requisitos
@@ -54,7 +54,16 @@ cd painel-mtr-backend
 npm install
 ```
 
-### 3. Configuração (.env)
+### 3. Configurar Banco de Dados
+
+O sistema usa SQLite. Inicialize o banco de dados:
+
+```bash
+# Cria o arquivo dev.db e aplica as tabelas
+npx prisma migrate dev --name init
+```
+
+### 4. Configuração (.env)
 
 O sistema gera um arquivo `.env` automaticamente na primeira execução, mas para segurança em produção, recomendamos criar manualmente:
 
@@ -67,13 +76,38 @@ Edite as variáveis:
 
 ```ini
 PORT=3000
+DATABASE_URL="file:./dev.db"
 # Gere uma chave forte e aleatória para produção!
 JWT_SECRET=sua_chave_secreta_super_segura_e_aleatoria
 EDITOR_TOKEN=token_de_emergencia_opcional
 LOGIN_ICON=./public/Logo.png
 ```
 
-### 4. Rodar o Servidor
+### 5. Importação Inicial de Hosts (Opcional)
+
+Você pode carregar uma lista de hosts automaticamente criando um arquivo `hosts.txt` na raiz do projeto.
+
+**Formatos Suportados (uma linha por host):**
+
+1.  **Apenas IP/Domínio**:
+    ```text
+    192.168.1.1
+    google.com
+    ```
+2.  **IP e Nome (Título)**:
+    ```text
+    192.168.1.1, Servidor Principal
+    8.8.8.8, Google DNS
+    ```
+3.  **IP, Nome e Categoria**:
+    ```text
+    192.168.1.1, Servidor Web, Produção
+    10.0.0.5, Impressora, Escritório
+    ```
+
+Ao iniciar, o sistema lerá este arquivo e adicionará os novos hosts ao banco de dados.
+
+### 6. Rodar o Servidor
 
 Para desenvolvimento:
 ```bash
