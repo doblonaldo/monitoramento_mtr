@@ -1,140 +1,84 @@
-# Painel de Monitoramento MTR
+# Monitoramento MTR
 
-Um sistema web completo para monitoramento de latência e perda de pacotes em tempo real, utilizando a ferramenta MTR (My Traceroute). Ideal para provedores de internet (ISPs), administradores de rede e equipes de NOC.
+Sistema de monitoramento de rede que executa testes MTR periodicamente, detecta mudanças de rota e coleta métricas de latência e perda de pacotes.
 
-![Login Screen](public/Logo.png)
+## Funcionalidades
 
-## 🚀 Funcionalidades
+- **Monitoramento Contínuo**: Executa MTR a cada 30 segundos.
+- **Detecção de Mudanças**: Registra alterações na rota de rede.
+- **Métricas**: Coleta latência média e perda de pacotes, com gráficos históricos.
+- **Dashboard em Tempo Real**: Interface web para visualização dos hosts e gráficos.
+- **Gestão de Usuários**: Sistema de login com níveis de acesso (Admin, Editor, Viewer).
 
-*   **Monitoramento em Tempo Real**: Executa MTR a cada 30 segundos para todos os hosts cadastrados.
-*   **Dashboard Interativo**: Visualize latência, perda de pacotes e histórico de mudanças.
-*   **Gestão de Usuários**:
-    *   Sistema de convites por link.
-    *   Redefinição de senha segura.
-    *   Controle de acesso baseado em funções (Admin/Editor/Viewer).
-*   **Segurança**:
-    *   Autenticação JWT.
-    *   Senhas com hash (bcrypt).
-    *   Proteção contra força bruta (Rate Limiting).
-    *   Logs de auditoria de ações do sistema.
-*   **Personalização**: Logo configurável e categorias de hosts.
+## Pré-requisitos
 
-## 🛠️ Tecnologias Utilizadas
+- Node.js (v18 ou superior)
+- `mtr` instalado no sistema (`sudo apt install mtr`)
+- `sqlite3` (opcional, para inspeção manual)
 
-*   **Backend**: Node.js, Express.
-*   **Banco de Dados**: SQLite (via Prisma ORM).
-*   **Segurança**: Helmet (conceitual), Rate Limit, BCrypt, JWT.
-*   **Frontend**: HTML5, CSS3 (Variáveis CSS, Flexbox/Grid), JavaScript (ES6+).
-*   **Ferramentas de Sistema**: `mtr` (Linux).
+## Instalação
 
-## 📋 Pré-requisitos
+1. **Clone o repositório** (ou extraia os arquivos):
+   ```bash
+   git clone <url-do-repositorio>
+   cd monitoramento_mtr
+   ```
 
-*   **Sistema Operacional**: Linux (Ubuntu/Debian recomendados).
-*   **Node.js**: Versão 16 ou superior.
-*   **MTR**: Ferramenta de linha de comando instalada.
+2. **Instale as dependências**:
+   ```bash
+   npm install
+   ```
 
-## 📦 Instalação do Zero
+3. **Configure o Banco de Dados**:
+   O sistema usa SQLite. Execute a migração inicial para criar o banco e as tabelas:
+   ```bash
+   npx prisma migrate dev --name init
+   ```
 
-Siga os passos abaixo para colocar o sistema no ar em poucos minutos.
+4. **(Opcional) Adicione Hosts Iniciais**:
+   Crie um arquivo `hosts.txt` na raiz do projeto para importar hosts automaticamente na primeira execução.
+   Formato: `IP, Título, Categoria`
+   Exemplo:
+   ```
+   8.8.8.8, Google DNS, DNS
+   1.1.1.1, Cloudflare, DNS
+   youtube.com, Youtube, Sites
+   ```
 
-### 1. Instalar Dependências do Sistema
+## Execução
 
-```bash
-sudo apt update
-sudo apt install nodejs npm mtr -y
-```
+Para iniciar o servidor:
 
-> **Nota**: O `mtr` requer permissões elevadas. O sistema tenta executá-lo automaticamente, mas verifique se o usuário tem permissão caso encontre erros.
-
-### 2. Clonar e Instalar o Projeto
-
-```bash
-git clone https://github.com/seu-usuario/painel-mtr-backend.git
-cd painel-mtr-backend
-npm install
-```
-
-### 3. Configurar Banco de Dados
-
-O sistema usa SQLite. Inicialize o banco de dados:
-
-```bash
-# Cria o arquivo dev.db e aplica as tabelas
-npx prisma migrate dev --name init
-```
-
-### 4. Configuração (.env)
-
-O sistema gera um arquivo `.env` automaticamente na primeira execução, mas para segurança em produção, recomendamos criar manualmente:
-
-```bash
-cp .env.example .env
-nano .env
-```
-
-Edite as variáveis:
-
-```ini
-PORT=3000
-DATABASE_URL="file:./dev.db"
-# Gere uma chave forte e aleatória para produção!
-JWT_SECRET=sua_chave_secreta_super_segura_e_aleatoria
-EDITOR_TOKEN=token_de_emergencia_opcional
-LOGIN_ICON=./public/Logo.png
-```
-
-### 5. Importação Inicial de Hosts (Opcional)
-
-Você pode carregar uma lista de hosts automaticamente criando um arquivo `hosts.txt` na raiz do projeto.
-
-**Formatos Suportados (uma linha por host):**
-
-1.  **Apenas IP/Domínio**:
-    ```text
-    192.168.1.1
-    google.com
-    ```
-2.  **IP e Nome (Título)**:
-    ```text
-    192.168.1.1, Servidor Principal
-    8.8.8.8, Google DNS
-    ```
-3.  **IP, Nome e Categoria**:
-    ```text
-    192.168.1.1, Servidor Web, Produção
-    10.0.0.5, Impressora, Escritório
-    ```
-
-Ao iniciar, o sistema lerá este arquivo e adicionará os novos hosts ao banco de dados.
-
-### 6. Rodar o Servidor
-
-Para desenvolvimento:
 ```bash
 node server.js
 ```
 
-Para produção (usando PM2):
+O servidor iniciará na porta **3000** (padrão).
+Acesse: `http://localhost:3000`
+
+### Login Padrão
+- **Usuário**: `admin`
+- **Senha**: `admin123`
+
+> **Recomendação**: Altere a senha do admin imediatamente após o primeiro login.
+
+## Estrutura do Projeto
+
+O projeto segue uma arquitetura modular:
+
+- `src/config`: Configurações (Prisma, etc).
+- `src/controllers`: Lógica de controle das requisições API.
+- `src/services`: Lógica de negócios (Monitoramento MTR).
+- `src/routes`: Definição das rotas da API.
+- `src/middleware`: Middlewares de autenticação e segurança.
+- `src/utils`: Utilitários (Logger).
+- `public`: Frontend estático (HTML, CSS, JS).
+- `prisma`: Schema do banco de dados e migrações.
+
+## Desenvolvimento
+
+Para rodar em modo de desenvolvimento (com restart automático):
 ```bash
-sudo npm install -g pm2
-pm2 start server.js --name "monitor-mtr"
-pm2 save
-pm2 startup
+npm install -g nodemon
+nodemon server.js
 ```
-
-## 🔐 Primeiro Acesso
-
-1.  Acesse `http://SEU_IP:3000`.
-2.  Se for a primeira vez, o sistema criará um usuário **admin** padrão:
-    *   **Usuário**: `admin`
-    *   **Senha**: `admin123`
-3.  **IMPORTANTE**: Faça login, vá em "Gerenciar Usuários" e altere a senha imediatamente.
-
-## 🛡️ Segurança
-
-*   **Rate Limiting**: O sistema bloqueia IPs após 10 tentativas falhas de login em 15 minutos.
-*   **Logs**: Todas as ações críticas (criar usuário, resetar senha, apagar host) são registradas em `system_logs.json` e visíveis no painel.
-
-## 📄 Licença
-
-Este projeto é de código aberto e está disponível sob a licença [MIT](LICENSE).
