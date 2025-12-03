@@ -1,5 +1,71 @@
 [
   {
+    "timestamp": "2025-12-03T14:47:15.846Z",
+    "username": "admin",
+    "action": "Remover Categoria",
+    "details": "Categoria: Teste"
+  },
+  {
+    "timestamp": "2025-12-03T14:39:12.572Z",
+    "username": "admin",
+    "action": "Adicionar Categoria",
+    "details": "Cat: Teste"
+  },
+  {
+    "timestamp": "2025-12-03T14:32:02.670Z",
+    "username": "admin",
+    "action": "Remover Categoria",
+    "details": "Cat: Teste"
+  },
+  {
+    "timestamp": "2025-12-03T14:31:56.612Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Login realizado."
+  },
+  {
+    "timestamp": "2025-12-03T14:31:53.608Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Logout realizado."
+  },
+  {
+    "timestamp": "2025-12-03T14:16:55.005Z",
+    "username": "admin",
+    "action": "Adicionar Host",
+    "details": "Host: youtube.com"
+  },
+  {
+    "timestamp": "2025-12-03T14:16:46.432Z",
+    "username": "admin",
+    "action": "Adicionar Categoria",
+    "details": "Cat: Teste"
+  },
+  {
+    "timestamp": "2025-12-03T14:16:01.560Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Login realizado."
+  },
+  {
+    "timestamp": "2025-12-03T14:15:58.058Z",
+    "username": "admin",
+    "action": "Logout",
+    "details": "Logout realizado."
+  },
+  {
+    "timestamp": "2025-12-03T14:15:29.332Z",
+    "username": "admin",
+    "action": "Adicionar Host",
+    "details": "Host: 8.8.8.8"
+  },
+  {
+    "timestamp": "2025-12-03T14:14:58.998Z",
+    "username": "admin",
+    "action": "Login",
+    "details": "Login realizado."
+  },
+  {
     "timestamp": "2025-12-03T12:45:02.004Z",
     "username": "admin",
     "action": "Login",

@@ -481,7 +481,7 @@ app.post('/api/users/:username/reset-link', authenticateToken, authorizeRole(['a
         const resetToken = jwt.sign({ username: usernameParam, action: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
         const resetLink = `${req.protocol}://${req.get('host')}/reset-password.html?token=${resetToken}`;
 
-        logSystemAction(req.user.username, 'Gerar Reset Link', `Para: ${usernameParam}`);
+        logSystemAction(req.user.username, 'Gerar Reset Link', `Usuário: ${usernameParam}`);
         res.json({ link: resetLink });
     } catch (e) {
         res.status(500).json({ message: 'Erro ao gerar link.' });
@@ -651,7 +651,7 @@ app.post('/api/categories', authenticateToken, authorizeRole(['editor', 'admin']
 
     try {
         await prisma.category.create({ data: { name: name } });
-        logSystemAction(req.user.username, 'Adicionar Categoria', `Cat: ${name}`);
+        logSystemAction(req.user.username, 'Adicionar Categoria', `Categoria: ${name}`);
         res.status(201).json({ message: 'Categoria criada.' });
     } catch (e) {
         res.status(409).json({ message: 'Categoria já existe.' });
@@ -675,7 +675,7 @@ app.delete('/api/categories/:category', authenticateToken, authorizeRole(['edito
         });
 
         await prisma.category.delete({ where: { id: cat.id } });
-        logSystemAction(req.user.username, 'Remover Categoria', `Cat: ${catName}`);
+        logSystemAction(req.user.username, 'Remover Categoria', `Categoria: ${catName}`);
         res.json({ message: 'Categoria removida.' });
     } catch (e) {
         res.status(500).json({ message: 'Erro ao remover categoria.' });

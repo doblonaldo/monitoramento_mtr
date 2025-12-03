@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await safeFetch(`${API_URL}/hosts`, { headers: authHeadersGet });
             if (!response) return;
             if (!response.ok) throw new Error('Falha ao carregar hosts.');
-            const allHostsData = await response.json();
+            allHostsData = await response.json();
             filterAndRenderHosts();
         } catch (error) {
             console.error('Erro ao carregar hosts:', error);
