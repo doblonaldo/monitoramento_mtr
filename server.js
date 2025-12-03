@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const prisma = require('./src/config/prisma');
 const { startMonitoring, importHostsFromFile, getLastCheckTimestamp } = require('./src/services/mtrService');
+const { scheduleCleanup } = require('./src/services/cleanupService');
 
 // --- Carregar Variáveis de Ambiente ---
 const envPath = path.join(__dirname, '.env');
@@ -114,5 +115,6 @@ app.listen(PORT, '0.0.0.0', async () => {
     console.log(`Servidor rodando na porta ${PORT}`);
     await initializeDatabase();
     await importHostsFromFile();
+    scheduleCleanup();
     startMonitoring();
 });
