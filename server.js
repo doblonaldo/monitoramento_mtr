@@ -637,21 +637,71 @@ app.get('/api/hosts/:host', async (req, res) => {
 // Metrics (Histórico)
 app.get('/api/hosts/:host/metrics', async (req, res) => {
     const hostDest = req.params.host;
-    const host = await prisma.host.findUnique({
-        where: { destination: hostDest },
-        include: {
-            metrics: {
-                orderBy: { timestamp: 'desc' },
-                take: 60 // Últimos 60 pontos (aprox 30 min se a cada 30s)
-            }
-        }
-    });
+    const { start, end } = req.query;
 
-    if (host) {
-        // Retornar em ordem cronológica para o gráfico
-        res.json(host.metrics.reverse());
-    } else {
-        res.status(404).json({ message: 'Host não encontrado.' });
+    let whereClause = { host: { destination: hostDest } };
+
+    // Filtro de Data
+    if (start && end) {
+        whereClause.timestamp = {
+            gte: new Date(start),
+            lte: new Date(end)
+        };
+    }
+
+    try {
+        const metrics = await prisma.metric.findMany({
+            where: whereClause,
+            orderBy: { timestamp: 'asc' }
+        });
+
+        if (metrics.length === 0) return res.json([]);
+
+        // Lógica de Agregação
+        const startTime = new Date(start || metrics[0].timestamp).getTime();
+        const endTime = new Date(end || metrics[metrics.length - 1].timestamp).getTime();
+        const diffHours = (endTime - startTime) / (1000 * 60 * 60);
+
+        if (diffHours > 24) {
+            // Agregação por Hora
+            const aggregated = {};
+
+            metrics.forEach(m => {
+                const date = new Date(m.timestamp);
+                // Chave: YYYY-MM-DD-HH
+                const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
+
+                if (!aggregated[key]) {
+                    aggregated[key] = {
+                        timestamp: new Date(date.setMinutes(0, 0, 0)), // Hora cheia
+                        latencySum: 0,
+                        lossSum: 0,
+                        count: 0
+                    };
+                }
+
+                if (m.latency !== null) aggregated[key].latencySum += m.latency;
+                if (m.packetLoss !== null) aggregated[key].lossSum += m.packetLoss;
+                aggregated[key].count++;
+            });
+
+            const result = Object.values(aggregated).map(item => ({
+                timestamp: item.timestamp,
+                latency: item.count > 0 ? parseFloat((item.latencySum / item.count).toFixed(2)) : null,
+                packetLoss: item.count > 0 ? parseFloat((item.lossSum / item.count).toFixed(2)) : null
+            }));
+
+            // Ordenar novamente pois Object.values não garante ordem
+            result.sort((a, b) => a.timestamp - b.timestamp);
+            return res.json(result);
+        }
+
+        // Retorno normal (sem agregação)
+        res.json(metrics);
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ message: 'Erro ao buscar métricas.' });
     }
 });
 

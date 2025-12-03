@@ -454,18 +454,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateTimeline(card, data.history || [], startDate, endDate);
 
                 // Fetch Metrics for Chart
-                const metricsRes = await safeFetch(`${API_URL}/hosts/${hostDestino}/metrics`, { headers: authHeadersGet });
+                let metricsUrl = `${API_URL}/hosts/${hostDestino}/metrics`;
+                if (startDate && endDate) {
+                    metricsUrl += `?start=${startDate.toISOString()}&end=${endDate.toISOString()}`;
+                }
+
+                const metricsRes = await safeFetch(metricsUrl, { headers: authHeadersGet });
                 if (metricsRes && metricsRes.ok) {
                     const metrics = await metricsRes.json();
                     if (charts[hostDestino]) {
                         const chart = charts[hostDestino];
-                        // Atualizar dados do gráfico
-                        // O gráfico espera 30 pontos. Vamos pegar os últimos 30.
-                        const labels = metrics.map(m => new Date(m.timestamp).toLocaleTimeString());
+
+                        // Determinar formato da data
+                        const diffHours = startDate && endDate ? (endDate - startDate) / (1000 * 60 * 60) : 0;
+                        const isLongRange = diffHours > 24;
+
+                        const labels = metrics.map(m => {
+                            const date = new Date(m.timestamp);
+                            if (isLongRange) {
+                                return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                            }
+                            return date.toLocaleTimeString('pt-BR');
+                        });
+
                         const latencyData = metrics.map(m => m.latency);
 
                         chart.data.labels = labels;
                         chart.data.datasets[0].data = latencyData;
+
+                        // Mostrar Eixo X sempre para ver os horários
+                        chart.options.scales.x.display = true;
+
                         chart.update('quiet');
                     }
                 }
