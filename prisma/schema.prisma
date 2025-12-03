@@ -33,6 +33,7 @@ model Host {
   category    Category        @relation(fields: [categoryId], references: [id])
   status      String          @default("pending") // 'ok', 'failing', 'pending'
   logs        MonitoringLog[]
+  metrics     Metric[]
 }
 
 model MonitoringLog {
@@ -42,4 +43,13 @@ model MonitoringLog {
   timestamp DateTime @default(now())
   output    String
   isChange  Boolean  @default(false)
+}
+
+model Metric {
+  id         Int      @id @default(autoincrement())
+  hostId     Int
+  host       Host     @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  timestamp  DateTime @default(now())
+  latency    Float?   // Latência média em ms
+  packetLoss Float?   // Perda de pacotes em %
 }

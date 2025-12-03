@@ -1,0 +1,9 @@
+-- CreateTable
+CREATE TABLE "Metric" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "hostId" INTEGER NOT NULL,
+    "timestamp" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "latency" REAL,
+    "packetLoss" REAL,
+    CONSTRAINT "Metric_hostId_fkey" FOREIGN KEY ("hostId") REFERENCES "Host" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);

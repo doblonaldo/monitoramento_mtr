@@ -452,9 +452,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.querySelector('.mtr-output pre code').textContent = data.lastMtr || 'Nenhum teste MTR executado ainda.';
                 }
                 updateTimeline(card, data.history || [], startDate, endDate);
-                if (charts[hostDestino] && data.lastMtr) {
-                    const latency = parseLatencyFromMtr(data.lastMtr);
-                    card.dataset.lastAvgLatency = latency !== null ? latency : '';
+
+                // Fetch Metrics for Chart
+                const metricsRes = await safeFetch(`${API_URL}/hosts/${hostDestino}/metrics`, { headers: authHeadersGet });
+                if (metricsRes && metricsRes.ok) {
+                    const metrics = await metricsRes.json();
+                    if (charts[hostDestino]) {
+                        const chart = charts[hostDestino];
+                        // Atualizar dados do gráfico
+                        // O gráfico espera 30 pontos. Vamos pegar os últimos 30.
+                        const labels = metrics.map(m => new Date(m.timestamp).toLocaleTimeString());
+                        const latencyData = metrics.map(m => m.latency);
+
+                        chart.data.labels = labels;
+                        chart.data.datasets[0].data = latencyData;
+                        chart.update('quiet');
+                    }
                 }
             }
         } catch (error) {
@@ -705,21 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    setInterval(() => {
-        for (const [host, chart] of Object.entries(charts)) {
-            const card = document.getElementById(`card-${host.replace(/[.:]/g, '-')}`);
-            if (!card || card.classList.contains('hidden')) continue;
-            const lastAvgLatency = parseFloat(card.dataset.lastAvgLatency);
-            let newValue = null;
-            if (!isNaN(lastAvgLatency)) {
-                const variation = (Math.random() - 0.5) * (lastAvgLatency * 0.1);
-                newValue = Math.max(0, lastAvgLatency + variation);
-            }
-            chart.data.datasets[0].data.shift();
-            chart.data.datasets[0].data.push(newValue);
-            chart.update('quiet');
-        }
-    }, 2000);
+    // Loop de dados aleatórios removido em favor de dados reais
 
     setInterval(() => {
         updateStatusFooter();

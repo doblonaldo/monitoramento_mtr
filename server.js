@@ -217,14 +217,18 @@ function executeMtr(host) {
             }
             const lines = stdout.trim().split('\n');
             const headerLine = lines.find(line => line.includes('Loss%'));
-            if (!headerLine) {
-                resolve(stdout);
-                return;
+
+            let routeOnly = stdout; // Fallback
+
+            if (headerLine) {
+                const lossIndex = headerLine.indexOf('Loss%');
+                // Extrair apenas a parte do host/IP para detecção de mudança de rota
+                const formattedLines = lines.slice(1).map(line => line.substring(0, lossIndex).trimEnd());
+                routeOnly = formattedLines.join('\n');
             }
-            const lossIndex = headerLine.indexOf('Loss%');
-            const formattedLines = lines.slice(1).map(line => line.substring(0, lossIndex).trimEnd());
-            const finalOutput = formattedLines.join('\n');
-            resolve(finalOutput);
+
+            // Retornar tanto a rota limpa quanto o output completo para extração de métricas
+            resolve({ route: routeOnly, raw: stdout });
         });
     });
 }
@@ -239,6 +243,7 @@ async function checkHost(hostDestino) {
 
     const newMtrResult = await executeMtr(hostDestino).catch(err => ({ error: err.message }));
     let outputText = '';
+    let rawOutput = '';
     let isError = false;
 
     if (newMtrResult.error) {
@@ -247,17 +252,60 @@ async function checkHost(hostDestino) {
         isError = true;
     } else {
         console.log(`[Monitor] Sucesso em ${hostDestino}.`);
-        outputText = newMtrResult;
+        outputText = newMtrResult.route;
+        rawOutput = newMtrResult.raw;
+
+        // --- Extrair Métricas (Loss% e Avg Latency) ---
+        try {
+            const lines = rawOutput.trim().split('\n');
+            // Encontrar a linha do destino (última linha válida)
+            // MTR output example:
+            // Host              Loss%   Snt   Last   Avg  Best  Wrst StDev
+            // 1. 192.168.1.1     0.0%     3    1.2   1.1   1.0   1.2   0.1
+            // ...
+            // N. 8.8.8.8         0.0%     3   14.2  14.5  14.2  14.9   0.3
+
+            if (lines.length > 1) {
+                const lastLine = lines[lines.length - 1];
+                const parts = lastLine.trim().split(/\s+/);
+
+                // Assumindo formato padrão do MTR (Loss% é a 2ª coluna, Avg é a 5ª)
+                // parts[0] = Host (pode ter espaço? Geralmente é ID. Hostname)
+                // Se tiver ID (1.), o host é parts[1].
+                // Vamos tentar achar a coluna com %
+
+                const lossPart = parts.find(p => p.includes('%'));
+                let lossValue = null;
+                let avgValue = null;
+
+                if (lossPart) {
+                    lossValue = parseFloat(lossPart.replace('%', ''));
+                    const lossIndex = parts.indexOf(lossPart);
+                    // Avg geralmente é LossIndex + 3 (Snt, Last, Avg)
+                    if (parts.length > lossIndex + 3) {
+                        avgValue = parseFloat(parts[lossIndex + 3]);
+                    }
+                }
+
+                if (lossValue !== null || avgValue !== null) {
+                    await prisma.metric.create({
+                        data: {
+                            hostId: host.id,
+                            latency: avgValue,
+                            packetLoss: lossValue
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error(`[Monitor] Erro ao extrair métricas de ${hostDestino}:`, e);
+        }
     }
 
     // Atualizar Status do Host
     let newStatus = isError ? 'failing' : 'ok';
     if (isError && host.status === 'failing') {
-        // Se já estava falhando e continua, talvez marcar para deletar?
-        // No modelo antigo deletava. Vamos manter a lógica de deletar se falhar 2x?
-        // O usuário pediu "sistema limpo", talvez melhor não deletar automaticamente tão rápido.
-        // Vou manter o status 'failing' e registrar o log.
-        // Se quiser deletar: await prisma.host.delete(...)
+        // Mantendo status failing
     }
 
     // Verificar Mudança
@@ -269,14 +317,6 @@ async function checkHost(hostDestino) {
     } else if (lastLog.output !== outputText) {
         isChange = true; // Mudou a saída
     }
-
-    // Salvar Log se mudou ou se é o primeiro
-    // Para não encher o banco, salvamos apenas se houver mudança ou erro?
-    // O pedido foi "desmembrar as coisas". Vamos salvar sempre que houver mudança significativa.
-    // Se o output for idêntico, talvez não precise salvar novo log, apenas atualizar 'last_checked'?
-    // Mas o MTR sempre muda um pouco (latência).
-    // Vamos salvar se o CONTEÚDO (rotas) mudar. O executeMtr já remove colunas variáveis?
-    // O executeMtr remove do Loss% pra frente. Então as rotas (IPs) devem ser estáveis.
 
     if (isChange) {
         console.log(`[Monitor] Mudança detectada em ${hostDestino}`);
@@ -589,6 +629,27 @@ app.get('/api/hosts/:host', async (req, res) => {
                 mtrLog: l.output
             }))
         });
+    } else {
+        res.status(404).json({ message: 'Host não encontrado.' });
+    }
+});
+
+// Metrics (Histórico)
+app.get('/api/hosts/:host/metrics', async (req, res) => {
+    const hostDest = req.params.host;
+    const host = await prisma.host.findUnique({
+        where: { destination: hostDest },
+        include: {
+            metrics: {
+                orderBy: { timestamp: 'desc' },
+                take: 60 // Últimos 60 pontos (aprox 30 min se a cada 30s)
+            }
+        }
+    });
+
+    if (host) {
+        // Retornar em ordem cronológica para o gráfico
+        res.json(host.metrics.reverse());
     } else {
         res.status(404).json({ message: 'Host não encontrado.' });
     }
