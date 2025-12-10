@@ -10,6 +10,14 @@ Sistema de monitoramento de rede que executa testes MTR periodicamente, detecta 
 - **Dashboard em Tempo Real**: Interface web para visualização dos hosts e gráficos.
 - **Gestão de Usuários**: Sistema de login com níveis de acesso (Admin, Editor, Viewer).
 
+## Segurança
+
+### Armazenamento de Senhas
+A segurança dos dados dos usuários é uma prioridade. As senhas **nunca** são armazenadas em texto plano (plain text).
+- **Criptografia**: Utilizamos a biblioteca **bcryptjs** para gerar hashes seguros das senhas.
+- **Método**: As senhas passam por um processo de *hashing* com um custo de processamento (salt rounds) configurado para **10**.
+Isso assegura que as credenciais permaneçam protegidas mesmo em caso de acesso não autorizado ao banco de dados.
+
 ## Pré-requisitos
 
 - Node.js (v18 ou superior)
@@ -82,3 +90,8 @@ Para rodar em modo de desenvolvimento (com restart automático):
 npm install -g nodemon
 nodemon server.js
 ```
+
+## Atualização do Sistema
+
+Para instruções sobre como atualizar o sistema mantendo seus dados, consulte o arquivo [UPDATE.md](UPDATE.md).
+
